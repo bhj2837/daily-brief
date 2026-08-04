@@ -12,6 +12,18 @@ import { MOCK_GENERAL } from '@/data/mockNews'
 const hn = createHttp({ baseURL: 'https://hacker-news.firebaseio.com/v0' })
 const sf = createHttp({ baseURL: 'https://api.spaceflightnewsapi.net/v4' })
 
+// 종합뉴스: GNews (키 있을 때만 실데이터, 없으면 Mock)
+const GNEWS_KEY = import.meta.env.VITE_GNEWS_API_KEY
+const gn = createHttp({ baseURL: 'https://gnews.io/api/v4' })
+// 목록→상세 조회를 위한 세션 캐시(GNews는 id별 조회 엔드포인트가 없음)
+const gnewsCache = new Map()
+const hashUrl = (u) => {
+  let h = 0
+  const str = String(u)
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0x7fffffff
+  return h.toString(36)
+}
+
 // ---------- Hacker News ----------
 const mapHn = (item) => ({
   id: `hn-${item.id}`,
@@ -128,14 +140,55 @@ const mapMock = (m) => ({
 
 const mockFrom = (arr, category) => arr.map((m) => ({ ...mapMock(m), category }))
 
+const mapGnews = (a) => {
+  const id = `gnews-${hashUrl(a.url)}`
+  const row = {
+    id,
+    rawId: id.slice(6),
+    category: 'general',
+    source: 'gnews',
+    sourceLabel: a.source?.name || 'GNews',
+    isLive: true,
+    title: a.title,
+    url: a.url,
+    image: a.image || null,
+    summary: a.description || '',
+    // GNews 무료플랜은 본문이 일부만 제공됨(끝의 "[123 chars]" 표시 제거)
+    body: a.content ? [String(a.content).replace(/\s*\[\d+\s*chars\]\s*$/, '…')] : null,
+    author: a.source?.name,
+    score: null,
+    comments: null,
+    at: a.publishedAt ? new Date(a.publishedAt).getTime() : Date.now(),
+  }
+  gnewsCache.set(id, row)
+  return row
+}
+
 export const fetchGeneralNews = async () => {
-  // 실 키(GNews/NewsData/Guardian)가 있으면 여기서 실데이터로 대체 가능. 기본은 Mock.
+  // 키가 있으면 GNews 실데이터, 없거나 실패하면 Mock 폴백
+  if (GNEWS_KEY) {
+    try {
+      const { data } = await gn.get('/top-headlines', {
+        params: { category: 'general', lang: 'ko', country: 'kr', max: 20, apikey: GNEWS_KEY },
+      })
+      const arts = data?.articles || []
+      if (arts.length) return { data: arts.map(mapGnews), source: 'api' }
+    } catch (e) {
+      console.warn('[news] 종합 폴백:', e.message)
+    }
+  }
   return { data: MOCK_GENERAL.map(mapMock), source: 'mock' }
 }
 
 export const findMockNews = (rawId) => {
   const m = MOCK_GENERAL.find((x) => x.rawId === rawId)
   return m ? mapMock(m) : null
+}
+
+// GNews 상세: 세션 캐시에 없으면 목록을 다시 받아 채운 뒤 반환
+export const findGnewsNews = async (id) => {
+  if (!gnewsCache.has(id)) await fetchGeneralNews()
+  return gnewsCache.get(id) || null
 }
 
 // ---------- 카테고리 디스패치 ----------

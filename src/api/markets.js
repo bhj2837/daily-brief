@@ -10,6 +10,17 @@ import { MOCK_STOCKS, MOCK_RATES, MOCK_CRYPTO } from '@/data/mockMarkets'
 const fx = createHttp({ baseURL: 'https://api.frankfurter.dev/v1' })
 const cg = createHttp({ baseURL: 'https://api.coingecko.com/api/v3' })
 
+// 증시: Finnhub (키 있을 때만 실데이터). 무료플랜에서 확실히 동작하는 미국 상장 ETF로
+// 주요 지수를 대리 표현한다(지수 직접 조회는 유료). 키가 없으면 Mock 폴백.
+const FINNHUB_KEY = import.meta.env.VITE_FINNHUB_API_KEY
+const fh = createHttp({ baseURL: 'https://finnhub.io/api/v1' })
+const STOCK_SYMBOLS = [
+  { id: 'spy', label: 'S&P 500', name: 'S&P 500 ETF(SPY)', symbol: 'SPY' },
+  { id: 'qqq', label: 'NASDAQ 100', name: '나스닥100 ETF(QQQ)', symbol: 'QQQ' },
+  { id: 'dia', label: '다우', name: '다우존스 ETF(DIA)', symbol: 'DIA' },
+  { id: 'ewy', label: '한국(KOSPI)', name: 'MSCI 한국 ETF(EWY)', symbol: 'EWY' },
+]
+
 // ---- 표시용 숫자 포맷 ----
 export const fmtNum = (v) => {
   if (v == null || Number.isNaN(v)) return '--'
@@ -102,7 +113,39 @@ export const fetchCrypto = async () => {
 
 // ---------- 증시 (기본 Mock) ----------
 export const fetchStocks = async () => {
-  // 실 키(Finnhub 등)가 있으면 여기서 실데이터로 대체 가능. 기본은 Mock.
+  // 키가 있으면 Finnhub 실데이터, 없거나 실패하면 Mock 폴백
+  if (FINNHUB_KEY) {
+    try {
+      const quotes = await Promise.all(
+        STOCK_SYMBOLS.map((s) =>
+          fh
+            .get('/quote', { params: { symbol: s.symbol, token: FINNHUB_KEY } })
+            .then((r) => ({ s, q: r.data }))
+            .catch(() => ({ s, q: null })),
+        ),
+      )
+      const rows = quotes
+        .filter(({ q }) => q && typeof q.c === 'number' && q.c > 0)
+        .map(({ s, q }) =>
+          withDisplay(
+            {
+              id: s.id,
+              label: s.label,
+              name: s.name,
+              value: q.c,
+              change: q.dp ?? 0,
+              // Finnhub 무료플랜은 캔들(시계열)이 유료라 전일종가→시가→현재가로 간이 추세선 구성
+              spark: [q.pc, q.o, q.c].filter((v) => typeof v === 'number' && v > 0),
+              isLive: true,
+            },
+            '$',
+          ),
+        )
+      if (rows.length) return { data: rows, source: 'api' }
+    } catch (e) {
+      console.warn('[markets] 증시 폴백:', e.message)
+    }
+  }
   return { data: MOCK_STOCKS.map((r) => withDisplay({ ...r, isLive: false })), source: 'mock' }
 }
 

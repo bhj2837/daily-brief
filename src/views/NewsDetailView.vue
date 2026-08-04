@@ -4,7 +4,7 @@
 // HN 기사는 원문 링크 + 상위 댓글, Spaceflight는 요약+이미지+원문, 종합(Mock)은 본문 문단.
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { fetchHnItem, fetchHnComments, fetchSfItem, findMockNews } from '@/api/news'
+import { fetchHnItem, fetchHnComments, fetchSfItem, findMockNews, findGnewsNews } from '@/api/news'
 import { useBookmarkStore } from '@/stores/bookmarkStore'
 import { timeAgo } from '@/utils/format'
 import BaseCard from '@/components/common/BaseCard.vue'
@@ -46,6 +46,9 @@ const load = async (id) => {
       if (a.kids?.length) comments.value = await fetchHnComments(a.kids)
     } else if (id.startsWith('sf-')) {
       article.value = await fetchSfItem(id.slice(3))
+    } else if (id.startsWith('gnews-')) {
+      article.value = await findGnewsNews(id)
+      if (!article.value) error.value = '기사를 찾을 수 없습니다. 목록에서 다시 열어 주세요.'
     } else if (id.startsWith('mock-')) {
       article.value = findMockNews(id.slice(5))
       if (!article.value) error.value = '기사를 찾을 수 없습니다.'

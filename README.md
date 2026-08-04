@@ -30,10 +30,12 @@ cp .env.example .env
 | 변수 | 용도 | 필요 여부 |
 |---|---|---|
 | `VITE_OPENWEATHER_API_KEY` | 날씨 | 선택 (없으면 **Open-Meteo로 실시간**) |
-| `VITE_FINNHUB_API_KEY` | 증시 | 선택 (없으면 샘플) |
-| `VITE_GNEWS_API_KEY` | 한국 종합뉴스 | 선택 (없으면 샘플) |
+| `VITE_FINNHUB_API_KEY` | 증시 | 선택 (넣으면 실시간, 없으면 샘플) |
+| `VITE_GNEWS_API_KEY` | 한국 종합뉴스 | 선택 (넣으면 실시간, 없으면 샘플) |
 
-키가 필요 없는 API(날씨 **Open-Meteo**, 환율 Frankfurter, 코인 CoinGecko, 테크뉴스 Hacker News, 우주뉴스 Spaceflight News, 단어검증 Wiktionary)는 배포 후에도 항상 실데이터로 동작합니다. OpenWeather 키를 넣으면 날씨는 그쪽을 우선 사용합니다.
+키가 필요 없는 API(날씨 **Open-Meteo**, 환율 Frankfurter, 코인 CoinGecko, 테크뉴스 Hacker News, 우주뉴스 Spaceflight News, 단어검증 Wiktionary)는 배포 후에도 항상 실데이터로 동작합니다. 증시(Finnhub)·종합뉴스(GNews)는 **키를 넣으면 자동으로 실시간으로 전환**되고, 없으면 샘플로 동작합니다.
+
+> 키 발급·등록 방법은 **[API_KEYS.md](./API_KEYS.md)** 에 단계별로 정리했습니다.
 
 ---
 

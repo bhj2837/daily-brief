@@ -1,10 +1,12 @@
 /* Daily Brief 서비스워커 — 앱 셸 프리캐시 + 런타임 전략
+   base 하위 경로(GitHub Pages 등)에서도 동작하도록 상대경로/scope 기반으로 작성.
    - 정적 자산: 캐시 우선(cache-first)
    - 페이지 이동(navigate): 네트워크 우선 + 오프라인 시 캐시된 셸 폴백
-   - API 요청: 항상 네트워크(캐시하지 않음 → 항상 최신 시세/뉴스)
+   - API 요청: 항상 네트워크(캐시하지 않음)
 */
-const VERSION = 'db-v1'
-const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon-192.png']
+const VERSION = 'db-v2'
+// self.registration.scope 기준 상대경로 → 루트/하위 경로 모두 대응
+const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png']
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(APP_SHELL)).then(() => self.skipWaiting()))
@@ -23,13 +25,17 @@ self.addEventListener('fetch', (e) => {
   if (request.method !== 'GET') return
   const url = new URL(request.url)
 
-  // 외부 API/도메인은 SW가 관여하지 않음(항상 네트워크)
+  // 외부 API/도메인은 관여하지 않음(항상 네트워크)
   if (url.origin !== self.location.origin) return
 
-  // 페이지 이동: 네트워크 우선, 실패 시 캐시된 셸
+  // 페이지 이동: 네트워크 우선, 실패 시 캐시된 셸(scope 기준 index.html)
   if (request.mode === 'navigate') {
     e.respondWith(
-      fetch(request).catch(() => caches.match('/index.html').then((r) => r || caches.match('/'))),
+      fetch(request).catch(() =>
+        caches.match(new URL('./index.html', self.registration.scope)).then(
+          (r) => r || caches.match(new URL('./', self.registration.scope)),
+        ),
+      ),
     )
     return
   }
