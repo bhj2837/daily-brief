@@ -33,9 +33,11 @@ const { items } = storeToRefs(historyStore)
   flex-wrap: wrap;
 }
 .label {
-  font-size: 12px;
-  color: var(--ink-sub);
+  font-size: var(--fs-tiny);
+  color: var(--ink-mute);
   font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 .chips {
   display: flex;
@@ -43,18 +45,23 @@ const { items } = storeToRefs(historyStore)
   flex-wrap: wrap;
 }
 .chip {
-  border: 1px solid var(--border);
+  border: var(--rule-thin) solid var(--border-strong);
   background: var(--surface);
   color: var(--ink);
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 13px;
+  border-radius: var(--radius-pill);
+  padding: 3px 12px;
+  font-size: var(--fs-small);
+  font-weight: 600;
   cursor: pointer;
-  transition: transform 0.15s, border-color 0.2s;
+  transition:
+    transform var(--dur-fast) var(--ease-paper),
+    border-color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease);
 }
 .chip:hover {
   transform: translateY(-2px);
-  border-color: var(--border-strong);
+  border-color: var(--ink);
+  background: var(--surface-2);
 }
 .clear {
   border: 0;

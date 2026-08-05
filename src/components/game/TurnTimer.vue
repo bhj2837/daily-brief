@@ -30,17 +30,33 @@ const level = computed(() => (props.ratio > 0.5 ? 'ok' : props.ratio > 0.25 ? 'w
   opacity: 1;
 }
 .bar {
+  position: relative;
   flex: 1;
-  height: 8px;
+  height: 9px;
   background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  border: var(--rule-thin) solid var(--border-strong);
+  border-radius: var(--radius-pill);
   overflow: hidden;
+}
+/* 눈금: 4등분 계측선 */
+.bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(25% - 1px),
+    var(--border-strong) calc(25% - 1px) 25%
+  );
+  opacity: 0.7;
 }
 .fill {
   height: 100%;
-  border-radius: 999px;
-  transition: width 0.1s linear, background 0.3s;
+  border-radius: var(--radius-pill);
+  transition:
+    width 0.1s linear,
+    background 0.3s var(--ease);
 }
 .fill.ok {
   background: var(--up);
@@ -52,13 +68,23 @@ const level = computed(() => (props.ratio > 0.5 ? 'ok' : props.ratio > 0.25 ? 'w
   background: var(--down);
 }
 .sec {
-  font-size: 13px;
-  font-weight: 700;
-  min-width: 42px;
+  font-size: var(--fs-small);
+  font-weight: 800;
+  min-width: 44px;
   text-align: right;
   color: var(--ink-sub);
 }
 .sec.danger {
   color: var(--down);
+  animation: tick 0.9s ease infinite;
+}
+@keyframes tick {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
 }
 </style>

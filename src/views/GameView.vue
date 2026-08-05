@@ -21,9 +21,29 @@ const useHint = () => {
 }
 
 const {
-  chain, status, result, turn, checking, computerThinking, score, combo, difficulty, timeLeft, message,
-  soundOn, hintWord, hintsUsed,
-  lastChar, starts, timeRatio, chainLength, start, submit, surrender, hint, toggleSound,
+  chain,
+  status,
+  result,
+  turn,
+  checking,
+  computerThinking,
+  score,
+  combo,
+  difficulty,
+  timeLeft,
+  message,
+  soundOn,
+  hintWord,
+  hintsUsed,
+  lastChar,
+  starts,
+  timeRatio,
+  chainLength,
+  start,
+  submit,
+  surrender,
+  hint,
+  toggleSound,
 } = useWordChain()
 
 const input = ref('')
@@ -40,7 +60,11 @@ const DIFFS = [
 const patchNotes = [
   {
     v: 'v1.0 · 기본',
-    items: ['한글 자모 분해 기반 두음법칙(려→여·락→낙) 판정', '엄선한 명사 로컬 사전 + 난이도별 컴퓨터 AI', '12초 타이머 · 점수/콤보 · 전적 localStorage 저장'],
+    items: [
+      '한글 자모 분해 기반 두음법칙(려→여·락→낙) 판정',
+      '로컬 명사 사전 + 난이도별 컴퓨터 AI',
+      '12초 타이머 · 점수/콤보 · 전적 localStorage 저장',
+    ],
   },
   {
     v: 'v1.1 · 편의',
@@ -48,11 +72,17 @@ const patchNotes = [
   },
   {
     v: 'v1.2 · 사전 API',
-    items: ['로컬 사전에 없어도 위키낱말사전(Wiktionary) API로 실제 존재 여부를 확인해 인정', '확인 중에는 타이머를 멈춰 네트워크 지연으로 손해 없게 처리'],
+    items: [
+      '로컬 사전에 없어도 위키낱말사전(Wiktionary) API로 실제 존재 여부를 확인해 인정',
+      '확인 중에는 타이머를 멈춰 네트워크 지연으로 손해 없게 처리',
+    ],
   },
   {
     v: 'v1.3 · 공정성',
-    items: ['컴퓨터도 로컬 사전이 막히면 위키낱말사전에서 실제 단어를 탐색해 이어감', '이제 실제로 이을 단어가 없을 때만 컴퓨터가 패배'],
+    items: [
+      '컴퓨터도 로컬 사전이 막히면 위키낱말사전에서 실제 단어를 탐색해 이어감',
+      '이제 실제로 이을 단어가 없을 때만 컴퓨터가 패배',
+    ],
   },
 ]
 
@@ -88,10 +118,14 @@ onMounted(() => gameStore.init())
 
 <template>
   <div class="game">
-    <SectionHeader kicker="Game" title="끝말잇기">
+    <SectionHeader kicker="Puzzle" title="끝말잇기" size="lg">
       <template #action>
         <div class="head-tools">
-          <button class="sound" :title="soundOn ? '효과음 켜짐' : '효과음 꺼짐'" @click="toggleSound">
+          <button
+            class="sound"
+            :title="soundOn ? '효과음 켜짐' : '효과음 꺼짐'"
+            @click="toggleSound"
+          >
             {{ soundOn ? '🔊' : '🔇' }}
           </button>
           <span class="best mono">🏆 최고 {{ best }}</span>
@@ -113,12 +147,12 @@ onMounted(() => gameStore.init())
 
     <div class="layout">
       <!-- 게임 보드 -->
-      <BaseCard class="board">
+      <BaseCard class="board" variant="clip">
         <!-- 시작 전 -->
         <div v-if="status === 'idle'" class="intro">
           <p class="intro-lead">
-            컴퓨터가 낸 단어의 <b>마지막 글자</b>로 시작하는 단어를 이어 보세요.
-            두음법칙(려→여, 락→낙)도 인정합니다.
+            컴퓨터가 낸 단어의 <b>마지막 글자</b>로 시작하는 단어를 이어 보세요. 두음법칙(려→여,
+            락→낙)도 인정합니다.
           </p>
           <div class="diff">
             <span class="diff-label">난이도</span>
@@ -130,7 +164,8 @@ onMounted(() => gameStore.init())
                 :class="{ on: selectedDiff === d.key }"
                 @click="selectedDiff = d.key"
               >
-                <b>{{ d.label }}</b><span>{{ d.desc }}</span>
+                <b>{{ d.label }}</b
+                ><span>{{ d.desc }}</span>
               </button>
             </div>
           </div>
@@ -175,7 +210,11 @@ onMounted(() => gameStore.init())
               <b class="serif">{{ startsHint }}</b>
               <span class="hint-sub">(‘{{ lastChar }}’(으)로 끝남)</span>
             </div>
-            <TurnTimer :ratio="timeRatio" :seconds="timeLeft" :active="turn === 'player' && !checking" />
+            <TurnTimer
+              :ratio="timeRatio"
+              :seconds="timeLeft"
+              :active="turn === 'player' && !checking"
+            />
             <div class="input-row">
               <el-input
                 ref="inputEl"
@@ -204,7 +243,9 @@ onMounted(() => gameStore.init())
                 {{ checking ? '확인 중' : '제출' }}
               </el-button>
             </div>
-            <p v-if="checking" class="checking-note">🔎 로컬 사전에 없어 온라인 사전으로 확인하고 있어요…</p>
+            <p v-if="checking" class="checking-note">
+              🔎 로컬 사전에 없어 온라인 사전으로 확인하고 있어요…
+            </p>
             <p v-if="hintWord" class="hint-word">
               💡 예시: <b class="serif">{{ hintWord }}</b>
             </p>
@@ -212,27 +253,47 @@ onMounted(() => gameStore.init())
               <button class="ghost" :disabled="turn !== 'player' || checking" @click="useHint">
                 💡 힌트 (-5점{{ hintsUsed ? ` · ${hintsUsed}회` : '' }})
               </button>
-              <button class="surrender" :disabled="checking || computerThinking" @click="surrender">기권하기</button>
+              <button class="surrender" :disabled="checking || computerThinking" @click="surrender">
+                기권하기
+              </button>
             </div>
           </div>
         </template>
       </BaseCard>
 
       <!-- 사이드바: 전적 + 규칙 -->
-      <aside class="side">
-        <BaseCard kicker="Stats" title="전적">
+      <aside class="side rule-left">
+        <BaseCard v-reveal kicker="Stats" title="전적" variant="clip">
           <div class="stats">
-            <div class="stat"><span class="s-v mono">{{ best }}</span><span class="s-l">최고 점수</span></div>
-            <div class="stat"><span class="s-v mono">{{ winRate }}%</span><span class="s-l">승률</span></div>
-            <div class="stat"><span class="s-v mono">{{ wins }}</span><span class="s-l">승</span></div>
-            <div class="stat"><span class="s-v mono">{{ losses }}</span><span class="s-l">패</span></div>
-            <div class="stat"><span class="s-v mono">{{ longest }}</span><span class="s-l">최장 체인</span></div>
-            <div class="stat"><span class="s-v mono">{{ bestCombo }}x</span><span class="s-l">최고 콤보</span></div>
+            <div class="stat">
+              <span class="s-v mono">{{ best }}</span
+              ><span class="s-l">최고 점수</span>
+            </div>
+            <div class="stat">
+              <span class="s-v mono">{{ winRate }}%</span><span class="s-l">승률</span>
+            </div>
+            <div class="stat">
+              <span class="s-v mono">{{ wins }}</span
+              ><span class="s-l">승</span>
+            </div>
+            <div class="stat">
+              <span class="s-v mono">{{ losses }}</span
+              ><span class="s-l">패</span>
+            </div>
+            <div class="stat">
+              <span class="s-v mono">{{ longest }}</span
+              ><span class="s-l">최장 체인</span>
+            </div>
+            <div class="stat">
+              <span class="s-v mono">{{ bestCombo }}x</span><span class="s-l">최고 콤보</span>
+            </div>
           </div>
-          <button v-if="wins + losses > 0" class="reset" @click="gameStore.reset()">전적 초기화</button>
+          <button v-if="wins + losses > 0" class="reset" @click="gameStore.reset()">
+            전적 초기화
+          </button>
         </BaseCard>
 
-        <BaseCard kicker="Rules" title="규칙">
+        <BaseCard v-reveal="{ delay: 90 }" kicker="Rules" title="규칙" variant="clip">
           <ul class="rules">
             <li>사전에 있는 <b>2글자 이상 명사</b>만 인정</li>
             <li>이전 단어의 <b>마지막 글자</b>로 시작</li>
@@ -244,48 +305,32 @@ onMounted(() => gameStore.init())
         </BaseCard>
       </aside>
     </div>
-
-    <p class="dict-note">
-      입력한 단어가 로컬 사전(엄선한 명사 약 440개)에 없으면
-      <a href="https://ko.wiktionary.org" target="_blank" rel="noopener noreferrer">위키낱말사전</a>
-      API로 실제 존재 여부를 확인해 인정합니다. 한글 자모 분해로 두음법칙까지 검증합니다.
-    </p>
   </div>
 </template>
 
 <style scoped>
+/* 조판: 좌측 대국판(게임 보드) + 우측 박스 기사(전적·규칙).
+   신문 낱말퍼즐 지면처럼 괘선과 등폭 숫자로 정보를 정렬한다. */
 .game {
   display: grid;
   gap: 6px;
 }
-.dict-note {
-  margin-top: 16px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--ink-mute);
-  text-align: center;
-}
-.dict-note a {
-  color: var(--ink-sub);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.dict-note a:hover {
-  color: var(--accent);
-}
+
+/* 패치노트 (접이식) */
 .patch {
-  margin: 2px 0 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  margin: 2px 0 var(--sp-4);
+  border: var(--rule-thin) solid var(--border);
+  border-left: var(--rule-med) solid var(--border-strong);
+  border-radius: var(--radius);
   background: var(--surface-2);
 }
 .patch > summary {
   cursor: pointer;
   list-style: none;
-  padding: 10px 14px;
-  font-size: 12px;
+  padding: 9px 14px;
+  font-size: var(--fs-tiny);
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-sub);
 }
@@ -296,12 +341,14 @@ onMounted(() => gameStore.init())
   content: '▸';
   margin-right: 8px;
   color: var(--ink-mute);
+  display: inline-block;
+  transition: transform var(--dur) var(--ease-paper);
 }
 .patch[open] > summary::before {
-  content: '▾';
+  transform: rotate(90deg);
 }
 .patch-body {
-  padding: 4px 16px 14px;
+  padding: 2px 16px 14px;
   display: grid;
   gap: 12px;
 }
@@ -313,85 +360,66 @@ onMounted(() => gameStore.init())
 .patch-ver ul {
   margin: 5px 0 0;
   padding-left: 16px;
+  list-style: disc;
 }
 .patch-ver li {
   font-size: 12.5px;
   line-height: 1.65;
   color: var(--ink-sub);
 }
+
+/* 헤더 도구 */
 .head-tools {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 .sound {
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  border-radius: 999px;
-  width: 32px;
-  height: 32px;
+  border: var(--rule-thin) solid var(--border-strong);
+  background: transparent;
+  border-radius: var(--radius-pill);
+  width: 31px;
+  height: 31px;
   cursor: pointer;
   font-size: 14px;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease);
 }
 .sound:hover {
-  border-color: var(--border-strong);
+  border-color: var(--ink);
+  background: var(--surface-2);
 }
 .best {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: var(--fs-small);
+  font-weight: 800;
   color: var(--ink-sub);
+  white-space: nowrap;
 }
-.hint-word {
-  font-size: 14px;
-  color: var(--ink-sub);
-}
-.hint-word b {
-  font-size: 17px;
-  color: var(--accent);
-  margin-left: 4px;
-}
-.play-tools {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.ghost {
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--ink-sub);
-  border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 12.5px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.ghost:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.ghost:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
+
+/* 레이아웃 */
 .layout {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 22px;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 34px);
   align-items: start;
 }
 
-/* 인트로 */
+/* ===== 인트로 ===== */
 .intro {
   display: grid;
-  gap: 20px;
+  gap: var(--sp-5);
   place-items: center;
   text-align: center;
-  padding: 20px 10px;
+  padding: var(--sp-5) var(--sp-3);
 }
 .intro-lead {
+  font-family: var(--font-serif);
+  font-size: var(--fs-lead);
   color: var(--ink-sub);
-  line-height: 1.7;
-  max-width: 440px;
+  line-height: 1.75;
+  max-width: 44ch;
+  word-break: keep-all;
 }
 .intro-lead b {
   color: var(--ink);
@@ -402,28 +430,38 @@ onMounted(() => gameStore.init())
   justify-items: center;
 }
 .diff-label {
-  font-size: 12px;
+  font-size: var(--fs-tiny);
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-mute);
 }
 .diff-btns {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 .diff-btn {
   display: grid;
   gap: 2px;
   padding: 10px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border: var(--rule-thin) solid var(--border-strong);
+  border-radius: var(--radius);
   background: var(--surface);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease-paper);
+}
+.diff-btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--ink);
 }
 .diff-btn b {
-  font-size: 14px;
+  font-family: var(--font-serif);
+  font-size: 15px;
   font-weight: 800;
 }
 .diff-btn span {
@@ -438,12 +476,14 @@ onMounted(() => gameStore.init())
   min-width: 200px;
 }
 
-/* HUD */
+/* ===== HUD (계기판) ===== */
 .hud {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 18px;
+  gap: 1px;
+  margin-bottom: var(--sp-5);
+  border-top: var(--rule-med) solid var(--ink);
+  border-bottom: var(--rule-thin) solid var(--border-strong);
 }
 .hud-item {
   display: flex;
@@ -451,75 +491,83 @@ onMounted(() => gameStore.init())
   align-items: center;
   gap: 2px;
   padding: 10px 4px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-right: var(--rule-hair) solid var(--border);
+}
+.hud-item:last-child {
+  border-right: 0;
 }
 .hud-item .hl {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--ink-mute);
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.1em;
 }
 .hud-item .hv {
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .chainlist {
-  margin-bottom: 18px;
+  margin-bottom: var(--sp-5);
 }
 
-/* 결과 */
+/* ===== 결과 ===== */
 .result {
   text-align: center;
   display: grid;
   gap: 8px;
   place-items: center;
-  padding: 22px;
+  padding: var(--sp-5);
   border-radius: var(--radius);
-  border: 1px solid var(--border);
+  border: var(--rule-thin) solid var(--border-strong);
+  border-top-width: var(--rule-thick);
 }
 .result.win {
-  background: color-mix(in srgb, var(--up) 10%, var(--surface));
-  border-color: color-mix(in srgb, var(--up) 30%, var(--border));
+  background: color-mix(in srgb, var(--up) 9%, var(--surface));
+  border-top-color: var(--up);
 }
 .result.lose {
-  background: color-mix(in srgb, var(--down) 8%, var(--surface));
-  border-color: color-mix(in srgb, var(--down) 26%, var(--border));
+  background: color-mix(in srgb, var(--down) 7%, var(--surface));
+  border-top-color: var(--down);
 }
 .r-emoji {
   font-size: 46px;
+  line-height: 1;
 }
 .result h3 {
-  font-size: 24px;
+  font-size: var(--fs-h2);
   font-weight: 900;
 }
 .r-msg {
   color: var(--ink-sub);
-  font-size: 14px;
+  font-family: var(--font-serif);
+  font-size: 14.5px;
 }
 .r-score {
-  font-size: 13px;
+  font-size: var(--fs-small);
   color: var(--ink-mute);
   margin-bottom: 8px;
 }
 
-/* 입력 */
+/* ===== 입력 ===== */
 .play-zone {
   display: grid;
   gap: 12px;
 }
 .hint {
-  font-size: 14px;
+  font-size: var(--fs-small);
   color: var(--ink-sub);
+  padding-bottom: 8px;
+  border-bottom: var(--rule-hair) solid var(--border);
 }
 .hint b {
-  font-size: 18px;
+  font-size: 19px;
   color: var(--accent);
-  margin: 0 4px;
+  margin: 0 5px;
 }
 .hint-sub {
-  font-size: 12px;
+  font-size: var(--fs-tiny);
   color: var(--ink-mute);
 }
 .input-row {
@@ -533,8 +581,45 @@ onMounted(() => gameStore.init())
   font-size: 12.5px;
   color: var(--ink-sub);
 }
+.hint-word {
+  font-size: var(--fs-small);
+  color: var(--ink-sub);
+}
+.hint-word b {
+  font-size: 17px;
+  color: var(--accent);
+  margin-left: 4px;
+}
+.play-tools {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-top: var(--sp-2);
+  border-top: var(--rule-hair) solid var(--border);
+}
+.ghost {
+  border: var(--rule-thin) solid var(--border-strong);
+  background: transparent;
+  color: var(--ink-sub);
+  border-radius: var(--radius-pill);
+  padding: 5px 13px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+.ghost:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.ghost:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
 .surrender {
-  justify-self: start;
   border: 0;
   background: transparent;
   color: var(--ink-mute);
@@ -545,51 +630,53 @@ onMounted(() => gameStore.init())
   opacity: 0.5;
   cursor: default;
 }
-.surrender:hover {
+.surrender:hover:not(:disabled) {
   color: var(--down);
 }
 
-/* 사이드바 */
+/* ===== 사이드바 ===== */
 .side {
   display: grid;
-  gap: 18px;
+  gap: var(--sp-5);
+  position: sticky;
+  top: 118px;
 }
 .stats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 1px;
 }
 .stat {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 12px;
+  padding: 11px 12px;
+  border: var(--rule-hair) solid var(--border);
   background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
 }
 .s-v {
   font-size: 22px;
   font-weight: 800;
+  letter-spacing: -0.02em;
 }
 .s-l {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--ink-mute);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 .reset {
-  margin-top: 12px;
+  margin-top: var(--sp-3);
   border: 0;
   background: transparent;
   color: var(--ink-mute);
-  font-size: 12px;
+  font-size: var(--fs-tiny);
   cursor: pointer;
 }
 .reset:hover {
   color: var(--down);
 }
 .rules {
-  list-style: none;
   display: grid;
   gap: 9px;
 }
@@ -598,22 +685,43 @@ onMounted(() => gameStore.init())
   color: var(--ink-sub);
   padding-left: 18px;
   position: relative;
-  line-height: 1.5;
+  line-height: 1.55;
+  word-break: keep-all;
 }
 .rules li::before {
-  content: '·';
+  content: '§';
   position: absolute;
-  left: 6px;
+  left: 2px;
   color: var(--accent);
-  font-weight: 900;
+  font-weight: 700;
+  font-size: 12px;
 }
 .rules b {
   color: var(--ink);
 }
 
-@media (max-width: 860px) {
+/* ===== 반응형 ===== */
+@media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
+  }
+  .side {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .side {
+    grid-template-columns: 1fr;
+  }
+  .hud {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .hud-item:nth-child(2n) {
+    border-right: 0;
+  }
+  .input-row {
+    flex-direction: column;
   }
 }
 </style>

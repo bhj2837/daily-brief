@@ -19,24 +19,108 @@ const spark = (seed, base, vol = 0.02) => {
 
 // ---- 증시 (기본 Mock) ----
 export const MOCK_STOCKS = [
-  { id: 'kospi', label: 'KOSPI', name: '코스피', value: 2712.4, change: 0.45, spark: spark(11, 2712, 0.006) },
-  { id: 'kosdaq', label: 'KOSDAQ', name: '코스닥', value: 861.2, change: -0.32, spark: spark(23, 861, 0.008) },
-  { id: 'spx', label: 'S&P 500', name: 'S&P 500', value: 5487.0, change: 0.28, spark: spark(37, 5487, 0.005) },
-  { id: 'ndx', label: 'NASDAQ', name: '나스닥', value: 17842.5, change: 0.61, spark: spark(41, 17842, 0.007) },
-  { id: 'nikkei', label: 'Nikkei', name: '닛케이', value: 38210.3, change: -0.18, spark: spark(53, 38210, 0.006) },
+  {
+    id: 'kospi',
+    label: 'KOSPI',
+    name: '코스피',
+    value: 2712.4,
+    change: 0.45,
+    spark: spark(11, 2712, 0.006),
+  },
+  {
+    id: 'kosdaq',
+    label: 'KOSDAQ',
+    name: '코스닥',
+    value: 861.2,
+    change: -0.32,
+    spark: spark(23, 861, 0.008),
+  },
+  {
+    id: 'spx',
+    label: 'S&P 500',
+    name: 'S&P 500',
+    value: 5487.0,
+    change: 0.28,
+    spark: spark(37, 5487, 0.005),
+  },
+  {
+    id: 'ndx',
+    label: 'NASDAQ',
+    name: '나스닥',
+    value: 17842.5,
+    change: 0.61,
+    spark: spark(41, 17842, 0.007),
+  },
+  {
+    id: 'nikkei',
+    label: 'Nikkei',
+    name: '닛케이',
+    value: 38210.3,
+    change: -0.18,
+    spark: spark(53, 38210, 0.006),
+  },
 ]
 
 // ---- 환율 폴백 ----
 export const MOCK_RATES = [
-  { id: 'krw', label: 'USD/KRW', name: '원', value: 1378.2, change: -0.32, spark: spark(61, 1378, 0.004) },
-  { id: 'jpy', label: 'USD/JPY', name: '엔', value: 156.9, change: 0.11, spark: spark(67, 156.9, 0.003) },
-  { id: 'eur', label: 'USD/EUR', name: '유로', value: 0.867, change: -0.08, spark: spark(71, 0.867, 0.003) },
+  {
+    id: 'krw',
+    label: 'USD/KRW',
+    name: '원',
+    value: 1378.2,
+    change: -0.32,
+    spark: spark(61, 1378, 0.004),
+  },
+  {
+    id: 'jpy',
+    label: 'USD/JPY',
+    name: '엔',
+    value: 156.9,
+    change: 0.11,
+    spark: spark(67, 156.9, 0.003),
+  },
+  {
+    id: 'eur',
+    label: 'USD/EUR',
+    name: '유로',
+    value: 0.867,
+    change: -0.08,
+    spark: spark(71, 0.867, 0.003),
+  },
 ]
 
 // ---- 코인 폴백 ----
 export const MOCK_CRYPTO = [
-  { id: 'btc', label: 'BTC', name: 'Bitcoin', value: 63410, change: 1.84, spark: spark(83, 63410, 0.01) },
-  { id: 'eth', label: 'ETH', name: 'Ethereum', value: 3120, change: 0.62, spark: spark(89, 3120, 0.012) },
-  { id: 'sol', label: 'SOL', name: 'Solana', value: 146.2, change: 2.1, spark: spark(97, 146, 0.015) },
-  { id: 'xrp', label: 'XRP', name: 'XRP', value: 1.07, change: 0.5, spark: spark(101, 1.07, 0.012) },
+  {
+    id: 'btc',
+    label: 'BTC',
+    name: 'Bitcoin',
+    value: 63410,
+    change: 1.84,
+    spark: spark(83, 63410, 0.01),
+  },
+  {
+    id: 'eth',
+    label: 'ETH',
+    name: 'Ethereum',
+    value: 3120,
+    change: 0.62,
+    spark: spark(89, 3120, 0.012),
+  },
+  {
+    id: 'sol',
+    label: 'SOL',
+    name: 'Solana',
+    value: 146.2,
+    change: 2.1,
+    spark: spark(97, 146, 0.015),
+  },
+  {
+    id: 'xrp',
+    label: 'XRP',
+    name: 'XRP',
+    value: 1.07,
+    change: 0.5,
+    spark: spark(101, 1.07, 0.012),
+  },
 ]

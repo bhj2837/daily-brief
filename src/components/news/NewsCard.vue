@@ -1,6 +1,7 @@
 <script setup>
-// 뉴스 기사 카드 (강의 4장 props/emit). 클릭 시 내부 상세로 이동(emit),
+// 뉴스 기사 카드 (강의 4장 props/emit). 클릭 시 내부 상세로 이동,
 // 북마크 토글은 bookmarkStore(type 'news')로 처리.
+// 조판: 좌측 본문 + 우측 하프톤 사진. 호버 시 망점이 걷히고 제목에 잉크 밑줄이 그어진다.
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBookmarkStore } from '@/stores/bookmarkStore'
@@ -30,15 +31,21 @@ const toggleMark = () =>
 
 <template>
   <article class="ncard" @click="open">
+    <span v-if="rank" class="rank serif" aria-hidden="true">{{ rank }}</span>
+
     <div class="body">
       <div class="head">
-        <span v-if="rank" class="rank serif">{{ rank }}</span>
         <SourceBadge :source="article.isLive ? 'live' : 'mock'" :label="article.sourceLabel" />
       </div>
-      <h3 class="title serif">{{ article.title }}</h3>
+
+      <h3 class="title serif">
+        <span class="ink-underline">{{ article.title }}</span>
+      </h3>
+
       <p v-if="article.summary" class="summary">{{ article.summary }}</p>
+
       <div class="foot">
-        <span class="meta">{{ meta }}</span>
+        <span class="meta dateline">{{ meta }}</span>
         <button
           class="mark"
           :class="{ on: marked }"
@@ -50,26 +57,42 @@ const toggleMark = () =>
         </button>
       </div>
     </div>
-    <div v-if="article.image" class="thumb">
-      <img :src="article.image" :alt="article.title" loading="lazy" />
-    </div>
+
+    <figure v-if="article.image" class="thumb halftone">
+      <img :src="article.image" :alt="article.title" loading="lazy" decoding="async" />
+    </figure>
   </article>
 </template>
 
 <style scoped>
 .ncard {
   display: flex;
-  gap: 16px;
-  justify-content: space-between;
-  align-items: stretch;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--border);
+  gap: var(--sp-4);
+  align-items: flex-start;
+  padding: var(--sp-4) 0;
+  border-bottom: var(--rule-thin) solid var(--border);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease);
 }
-.ncard:hover .title {
+.ncard:hover {
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+}
+
+/* 순번 활자 — 신문 랭킹 표기 */
+.rank {
+  flex-shrink: 0;
+  width: 34px;
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--ink-faint);
+  padding-top: 2px;
+  transition: color var(--dur) var(--ease);
+}
+.ncard:hover .rank {
   color: var(--accent);
 }
+
 .body {
   flex: 1;
   min-width: 0;
@@ -78,25 +101,27 @@ const toggleMark = () =>
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 7px;
-}
-.rank {
-  font-size: 18px;
-  font-weight: 900;
-  color: var(--ink-mute);
-  line-height: 1;
+  margin-bottom: 8px;
 }
 .title {
-  font-size: 18px;
+  font-size: 18.5px;
   font-weight: 700;
-  line-height: 1.3;
-  transition: color 0.15s;
+  line-height: 1.32;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.title .ink-underline {
+  background-size: 0% var(--rule-med);
+}
+.ncard:hover .title .ink-underline {
+  background-size: 100% var(--rule-med);
 }
 .summary {
   color: var(--ink-sub);
-  font-size: 13.5px;
-  line-height: 1.6;
-  margin-top: 6px;
+  font-family: var(--font-serif);
+  font-size: 14px;
+  line-height: 1.68;
+  margin-top: 7px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -107,34 +132,42 @@ const toggleMark = () =>
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 9px;
+  gap: var(--sp-3);
+  margin-top: 10px;
 }
 .meta {
-  font-size: 12px;
-  color: var(--ink-mute);
-  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.06em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .mark {
   border: 0;
   background: transparent;
   cursor: pointer;
   font-size: 15px;
-  opacity: 0.7;
-  transition: transform 0.15s, opacity 0.15s;
+  opacity: 0.55;
+  flex-shrink: 0;
+  transition:
+    transform var(--dur-fast) var(--ease-paper),
+    opacity var(--dur-fast) var(--ease);
 }
 .mark:hover {
   opacity: 1;
+  transform: scale(1.15);
 }
 .mark.on {
   opacity: 1;
 }
+
 .thumb {
   flex-shrink: 0;
-  width: 116px;
-  height: 84px;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  border: 1px solid var(--border);
+  width: 124px;
+  height: 88px;
+  border-radius: var(--radius);
+  border: var(--rule-thin) solid var(--border-strong);
   background: var(--surface-2);
 }
 .thumb img {
@@ -142,13 +175,24 @@ const toggleMark = () =>
   height: 100%;
   object-fit: cover;
 }
-@media (max-width: 560px) {
+
+@media (max-width: 640px) {
+  .ncard {
+    gap: var(--sp-3);
+  }
+  .rank {
+    width: 24px;
+    font-size: 19px;
+  }
   .thumb {
     width: 88px;
     height: 66px;
   }
   .title {
     font-size: 16px;
+  }
+  .summary {
+    display: none;
   }
 }
 </style>

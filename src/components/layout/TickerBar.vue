@@ -1,5 +1,5 @@
 <script setup>
-// 상단 실시간 티커 스트립. 마켓 지표(환율/코인/증시)를 흐르는 마퀴로 보여준다.
+// 상단 실시간 시세 테이프. 증권면 상단의 흐르는 시세 스트립을 재현한다.
 // items가 없으면 샘플 데이터로 컴포넌트를 시연한다(App에서 실시간 요약 주입).
 import { computed } from 'vue'
 
@@ -18,6 +18,7 @@ const SAMPLE = [
 
 const data = computed(() => (props.items?.length ? props.items : SAMPLE))
 const isSample = computed(() => !props.items?.length)
+// 끊김 없는 마퀴를 위해 목록을 두 번 이어 붙인다
 const loop = computed(() => [...data.value, ...data.value])
 const sign = (c) => (c > 0 ? '▲' : c < 0 ? '▼' : '·')
 </script>
@@ -26,8 +27,9 @@ const sign = (c) => (c > 0 ? '▲' : c < 0 ? '▼' : '·')
   <div class="ticker" :aria-label="isSample ? '샘플 시세 티커' : '실시간 시세 티커'">
     <span class="tag" :class="isSample ? 'is-sample' : 'is-live'">
       <span class="tag-dot" />
-      {{ isSample ? 'SAMPLE' : 'LIVE' }}
+      <span class="tag-text">{{ isSample ? 'SAMPLE' : 'LIVE' }}</span>
     </span>
+
     <div class="viewport">
       <div class="track">
         <span v-for="(it, i) in loop" :key="i" class="tick">
@@ -36,6 +38,7 @@ const sign = (c) => (c > 0 ? '▲' : c < 0 ? '▼' : '·')
           <span class="chg mono" :class="it.change > 0 ? 'up' : it.change < 0 ? 'down' : ''">
             {{ sign(it.change) }} {{ Math.abs(it.change).toFixed(2) }}%
           </span>
+          <span class="sep" aria-hidden="true">◆</span>
         </span>
       </div>
     </div>
@@ -50,13 +53,26 @@ const sign = (c) => (c > 0 ? '▲' : c < 0 ? '▼' : '·')
   background: var(--ink);
   color: var(--surface);
   overflow: hidden;
-  height: 34px;
+  height: 32px;
+  border-bottom: var(--rule-thin) solid var(--ink);
 }
 .theme-dark .ticker {
-  background: #0c0d10;
+  background: #0a0b0e;
+}
+/* 잉크 면에 얇은 인쇄 결 */
+.ticker::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.035) 0 1px,
+    transparent 1px 3px
+  );
 }
 
-/* 태그: 완전 불투명 + 흐르는 텍스트 위로 확실히 덮도록 z-index/그림자 */
+/* 상태 태그: 흐르는 텍스트 위로 확실히 덮이도록 z-index/그림자 */
 .tag {
   position: relative;
   z-index: 2;
@@ -66,31 +82,32 @@ const sign = (c) => (c > 0 ? '▲' : c < 0 ? '▼' : '·')
   gap: 7px;
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.12em;
-  padding: 0 14px;
+  letter-spacing: 0.14em;
+  padding: 0 13px;
   color: #fff;
-  box-shadow: 6px 0 10px -2px var(--ink);
+  box-shadow: 8px 0 12px -3px var(--ink);
 }
 .theme-dark .tag {
-  box-shadow: 6px 0 10px -2px #0c0d10;
+  box-shadow: 8px 0 12px -3px #0a0b0e;
 }
 .tag.is-live {
-  background: #16a34a;
+  background: #12734f;
 }
 .tag.is-sample {
-  background: #b45309;
+  background: #8a5a12;
 }
 .tag-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: #fff;
+  flex-shrink: 0;
 }
 .tag.is-live .tag-dot {
   animation: blink 1.6s ease infinite;
 }
 
-/* 뷰포트가 마퀴를 클립하고, 좌측은 페이드로 태그 뒤에서 자연스럽게 사라지게 */
+/* 뷰포트가 마퀴를 클립하고 양끝을 페이드 처리 */
 .viewport {
   position: relative;
   z-index: 1;
@@ -98,15 +115,26 @@ const sign = (c) => (c > 0 ? '▲' : c < 0 ? '▼' : '·')
   overflow: hidden;
   display: flex;
   align-items: center;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 40px), transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 40px), transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 26px,
+    #000 calc(100% - 44px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 26px,
+    #000 calc(100% - 44px),
+    transparent 100%
+  );
 }
 .track {
   display: flex;
-  gap: 30px;
   white-space: nowrap;
-  padding-left: 20px;
-  animation: slide 40s linear infinite;
+  padding-left: 22px;
+  animation: slide 44s linear infinite;
   will-change: transform;
 }
 .track:hover {
@@ -117,10 +145,12 @@ const sign = (c) => (c > 0 ? '▲' : c < 0 ? '▼' : '·')
   align-items: center;
   gap: 8px;
   font-size: 12.5px;
+  padding-right: 22px;
 }
 .tick .lbl {
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(255, 255, 255, 0.58);
   font-weight: 700;
+  letter-spacing: 0.04em;
 }
 .tick .val {
   font-weight: 700;
@@ -130,11 +160,17 @@ const sign = (c) => (c > 0 ? '▲' : c < 0 ? '▼' : '·')
   opacity: 0.95;
 }
 .tick .chg.up {
-  color: #4ade80;
+  color: #5fd39b;
 }
 .tick .chg.down {
-  color: #ff7a7a;
+  color: #ff8a80;
 }
+.tick .sep {
+  color: rgba(255, 255, 255, 0.16);
+  font-size: 7px;
+  padding-left: 14px;
+}
+
 @keyframes slide {
   from {
     transform: translateX(0);
@@ -149,7 +185,22 @@ const sign = (c) => (c > 0 ? '▲' : c < 0 ? '▼' : '·')
     opacity: 1;
   }
   50% {
-    opacity: 0.35;
+    opacity: 0.3;
+  }
+}
+
+@media (max-width: 560px) {
+  .ticker {
+    height: 28px;
+  }
+  .tag {
+    padding: 0 10px;
+  }
+  .tag-text {
+    display: none;
+  }
+  .tick {
+    font-size: 11.5px;
   }
 }
 </style>

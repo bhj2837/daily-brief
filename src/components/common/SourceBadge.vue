@@ -1,6 +1,5 @@
 <script setup>
-// 데이터 출처 배지 — 실시간(실 API) / 샘플(Mock) 을 명확히 구분해 표시.
-// 채점자가 "키 없이 Mock 폴백"을 확인할 수 있게 하는 UX 장치.
+// 데이터 출처 배지 — 실시간 응답인지 샘플 데이터인지 구분해 표시.
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -14,26 +13,40 @@ const text = computed(() => props.label || (isLive.value ? '실시간' : '샘플
 </script>
 
 <template>
-  <span class="src" :class="isLive ? 'live' : 'mock'" :title="isLive ? '실제 API 응답' : 'API 키 없음 · Mock 폴백'">
+  <span
+    class="src"
+    :class="isLive ? 'live' : 'mock'"
+    :title="isLive ? '실시간 응답' : '샘플 데이터'"
+  >
     <span class="dot" />
     {{ text }}
   </span>
 </template>
 
 <style scoped>
+/* 지면 위에 찍힌 작은 스탬프 라벨 */
 .src {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
   padding: 3px 9px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  border: var(--rule-thin) solid var(--border-strong);
   color: var(--ink-sub);
   background: var(--surface-2);
   white-space: nowrap;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+.src.live {
+  border-color: color-mix(in srgb, var(--up) 40%, var(--border-strong));
+}
+.src.mock {
+  border-style: dashed;
 }
 .src .dot {
   width: 6px;

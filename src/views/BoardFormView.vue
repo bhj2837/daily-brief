@@ -59,7 +59,7 @@ const cancel = () => router.back()
 
 <template>
   <div class="write">
-    <BaseCard :title="isEdit ? '글 수정' : '글쓰기'">
+    <BaseCard :title="isEdit ? '글 수정' : '글쓰기'" kicker="Letters" variant="clip">
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
         <el-form-item label="제목" prop="title">
           <el-input v-model="form.title" maxlength="100" show-word-limit />
@@ -69,7 +69,9 @@ const cancel = () => router.back()
         </el-form-item>
         <div class="actions">
           <el-button round @click="cancel">취소</el-button>
-          <el-button type="primary" round @click="onSubmit">{{ isEdit ? '수정' : '등록' }}</el-button>
+          <el-button type="primary" round @click="onSubmit">{{
+            isEdit ? '수정' : '등록'
+          }}</el-button>
         </div>
       </el-form>
     </BaseCard>
@@ -78,12 +80,27 @@ const cancel = () => router.back()
 
 <style scoped>
 .write {
-  max-width: 760px;
+  max-width: calc(var(--maxw-read) + 120px);
   margin: 0 auto;
 }
 .actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  padding-top: var(--sp-2);
+  border-top: var(--rule-hair) solid var(--border);
+}
+:deep(.el-form-item__label) {
+  font-size: var(--fs-tiny);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+/* 본문 입력란은 세리프로 — 원고지에 쓰듯 */
+:deep(.el-textarea__inner) {
+  font-family: var(--font-serif);
+  font-size: 15.5px;
+  line-height: 1.8;
 }
 </style>

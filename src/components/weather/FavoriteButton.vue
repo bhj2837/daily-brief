@@ -36,7 +36,9 @@ const onToggle = () => {
   font-size: 19px;
   line-height: 1;
   color: var(--ink-mute);
-  transition: transform 0.15s, color 0.2s;
+  transition:
+    transform 0.15s,
+    color 0.2s;
 }
 .fav-btn.active {
   color: var(--accent);

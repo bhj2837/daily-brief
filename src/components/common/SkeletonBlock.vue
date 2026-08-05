@@ -1,10 +1,11 @@
 <script setup>
 // 재사용 스켈레톤 로더. 로딩 상태 UX (강의 8장 스켈레톤 개념 + 자체 구현).
 // lines>1 이면 여러 줄, 아니면 단일 블록.
+// 인쇄물 톤에 맞춰 기본 모서리는 거의 직각(3px)으로 둔다.
 defineProps({
   width: { type: String, default: '100%' },
   height: { type: String, default: '16px' },
-  radius: { type: String, default: '8px' },
+  radius: { type: String, default: '3px' },
   lines: { type: Number, default: 1 },
 })
 </script>

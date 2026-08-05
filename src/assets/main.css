@@ -1,76 +1,164 @@
 /* =========================================================================
-   Daily Brief · 에디토리얼 디자인 시스템
-   신문/매거진 감성의 읽기 좋은 레이아웃. 라이트/다크 테마.
-   몰입형 무드(글래스/파티클)는 걷어내고, 종이 질감의 절제된 톤으로 재구성.
-   테마 토큰은 .theme-light / .theme-dark 로 스위칭된다 (configStore.resolvedTheme).
+   Daily Brief · 에디토리얼 디자인 시스템 v2
+   -------------------------------------------------------------------------
+   콘셉트: "절제된 고급 신문(broadsheet)".
+   - 종이 질감은 미세한 그레인 + 따뜻한 오프화이트로만 암시한다.
+   - 위계는 색이 아니라 '활자 크기 · 룰(괘선) 두께 · 여백'으로 만든다.
+   - 인터랙션은 잉크가 번지듯 조용하게. 요란한 그림자/글래스는 쓰지 않는다.
+
+   구성
+     1. 공통 토큰 (서체 · 타입 스케일 · 간격 · 룰 · 모션)
+     2. 테마 토큰 (.theme-light / .theme-dark)
+     3. 리셋
+     4. 타이포그래피 (킥커 · 데이트라인 · 드롭캡 · 본문 조판)
+     5. 레이아웃 유틸 (container · 신문 컬럼 · 괘선 · 접힘선)
+     6. 종이(paper) 표면
+     7. 이미지 처리 (하프톤)
+     8. 스크롤 인터랙션 (리빌 · 진행바)
+     9. 호버 / 전환 이펙트 (잉크 밑줄 · 종이 들림 · 페이지 전환)
+    10. 스켈레톤 · 스크롤바 · Element Plus 정합
+    11. 접근성 / 반응형 / 인쇄
+
+   ※ 웹폰트(Pretendard · Noto Serif KR)는 index.html에서 link로 로드한다.
+     CSS @import는 스타일시트를 받은 뒤에야 폰트를 요청해 렌더가 늦어지기 때문.
    ========================================================================= */
 
-/* ---- 폰트 (CDN, 네트워크 실패해도 시스템 폰트로 폴백) ---- */
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&display=swap');
-
-/* ===== 공통 토큰 (테마 무관) ===== */
+/* ======================= 1. 공통 토큰 ======================= */
 :root {
+  /* --- 서체 (CDN 실패 시 시스템 폰트로 자연 폴백) --- */
   --font-serif: 'Noto Serif KR', Georgia, 'Times New Roman', serif;
-  --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic',
-    sans-serif;
+  --font-sans:
+    'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
   --font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', 'Menlo', monospace;
 
-  --maxw: 1120px;
-  --radius: 14px;
-  --radius-sm: 9px;
-  --radius-lg: 20px;
+  /* --- 유동 타입 스케일 (모바일↔데스크톱 자동 보간) --- */
+  --fs-masthead: clamp(30px, 6.2vw, 54px);
+  --fs-display: clamp(30px, 5.4vw, 50px);
+  --fs-h1: clamp(26px, 4vw, 40px);
+  --fs-h2: clamp(20px, 2.6vw, 27px);
+  --fs-h3: clamp(17px, 2vw, 20px);
+  --fs-lead: clamp(15px, 1.5vw, 17.5px);
+  --fs-body: 15px;
+  --fs-small: 13px;
+  --fs-tiny: 11.5px;
 
-  --gap: 20px;
-  --pad: 22px;
+  /* --- 레이아웃 --- */
+  --maxw: 1180px;
+  --maxw-read: 720px; /* 본문 읽기 폭 (약 70자) */
+  --radius: 3px; /* 인쇄물은 거의 직각 */
+  --radius-sm: 2px;
+  --radius-lg: 5px;
+  --radius-pill: 999px;
 
-  --up: #0f7a55; /* 상승 */
-  --down: #c1121f; /* 하락 */
+  /* --- 간격 스케일 --- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 22px;
+  --sp-6: 30px;
+  --sp-7: 44px;
+  --sp-8: 64px;
+  --gap: var(--sp-5);
+  --pad: var(--sp-5);
 
+  /* --- 괘선(rule) 두께 --- */
+  --rule-hair: 0.5px;
+  --rule-thin: 1px;
+  --rule-med: 2px;
+  --rule-thick: 4px;
+
+  /* --- 시세 색 --- */
+  --up: #0f7a55;
+  --down: #c1121f;
+
+  /* --- 모션 --- */
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-paper: cubic-bezier(0.16, 0.84, 0.44, 1);
+  --dur-fast: 0.16s;
+  --dur: 0.28s;
+  --dur-slow: 0.55s;
+
+  /* --- 종이 그레인 (SVG 노이즈, 외부 이미지 없음) --- */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 }
 
-/* ===== 라이트 테마 (기본) ===== */
+/* ======================= 3. 테마 토큰 ======================= */
+
+/* --- 라이트: 신문 용지(오프화이트) + 잉크 --- */
 .theme-light {
-  --bg: #f4f1e9;
-  --surface: #ffffff;
-  --surface-2: #faf8f2;
-  --ink: #1b1a17;
-  --ink-sub: #625f58;
-  --ink-mute: #9a968c;
-  --border: #e5dfd2;
-  --border-strong: #d6cfbd;
-  --accent: #b3121b;
-  --accent-soft: #f8e7e5;
+  --bg: #efeade; /* 신문 더미 배경 */
+  --bg-2: #e7e0d1;
+  --surface: #fbf9f4; /* 지면 */
+  --surface-2: #f3efe4;
+  --surface-3: #ebe5d7;
+
+  --ink: #16150f; /* 본 잉크 */
+  --ink-sub: #57534a;
+  --ink-mute: #8d8880;
+  --ink-faint: #b6b0a4;
+
+  --border: #ded7c6;
+  --border-strong: #c8c0aa;
+  --border-ink: #16150f;
+
+  --accent: #a4141c; /* 붉은 인쇄 잉크 */
+  --accent-2: #7a3b12; /* 세피아 보조 */
+  --accent-soft: #f6e6e2;
   --link: #1b4965;
-  --shadow: rgba(40, 33, 18, 0.09);
-  --shadow-strong: rgba(40, 33, 18, 0.16);
-  --skeleton: linear-gradient(90deg, #ece7dc 25%, #f4f0e7 37%, #ece7dc 63%);
+
+  --shadow: rgba(52, 43, 24, 0.1);
+  --shadow-strong: rgba(52, 43, 24, 0.19);
+
+  --grain-opacity: 0.055;
+  --vignette: rgba(90, 76, 46, 0.06);
+
+  --skeleton: linear-gradient(90deg, #e6e0d1 25%, #f1ece0 37%, #e6e0d1 63%);
+  --img-filter: contrast(1.06) saturate(0.86) brightness(1.01);
 }
 
-/* ===== 다크 테마 ===== */
+/* --- 다크: 야간 인쇄본(잉크지) --- */
 .theme-dark {
-  --bg: #15161a;
-  --surface: #1e2026;
-  --surface-2: #24262e;
-  --ink: #ece9e1;
-  --ink-sub: #a4a09a;
-  --ink-mute: #6f6d68;
-  --border: #2e3038;
-  --border-strong: #3a3d47;
-  --accent: #ff5d52;
-  --accent-soft: #2b1d1c;
-  --link: #7fb3d5;
-  --shadow: rgba(0, 0, 0, 0.4);
-  --shadow-strong: rgba(0, 0, 0, 0.55);
-  --skeleton: linear-gradient(90deg, #23252c 25%, #2b2d35 37%, #23252c 63%);
+  --bg: #121316;
+  --bg-2: #0d0e11;
+  --surface: #1a1c21;
+  --surface-2: #212429;
+  --surface-3: #282b32;
+
+  --ink: #eae7de;
+  --ink-sub: #a49f96;
+  --ink-mute: #75716a;
+  --ink-faint: #55524c;
+
+  --border: #2d3038;
+  --border-strong: #3d414b;
+  --border-ink: #d8d4ca;
+
+  --accent: #ff6a5e;
+  --accent-2: #d9a441;
+  --accent-soft: #2c1d1b;
+  --link: #85b8da;
+
+  --shadow: rgba(0, 0, 0, 0.45);
+  --shadow-strong: rgba(0, 0, 0, 0.62);
+
+  --grain-opacity: 0.035;
+  --vignette: rgba(0, 0, 0, 0.28);
+
+  --skeleton: linear-gradient(90deg, #212429 25%, #2a2d34 37%, #212429 63%);
+  --img-filter: contrast(1.02) saturate(0.78) brightness(0.9);
 }
 
-/* ===== 리셋 ===== */
-* {
+/* ============================ 4. 리셋 ============================ */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+html {
+  scroll-behavior: smooth;
 }
 html,
 body,
@@ -79,12 +167,17 @@ body,
 }
 body {
   font-family: var(--font-sans);
+  font-size: var(--fs-body);
   background: var(--bg);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  line-height: 1.55;
-  transition: background 0.4s var(--ease), color 0.4s var(--ease);
+  line-height: 1.6;
+  overflow-x: hidden;
+  transition:
+    background var(--dur-slow) var(--ease),
+    color var(--dur-slow) var(--ease);
 }
 a {
   color: inherit;
@@ -92,69 +185,418 @@ a {
 }
 button {
   font-family: inherit;
+  color: inherit;
 }
 img {
   max-width: 100%;
   display: block;
 }
+ul,
+ol {
+  list-style: none;
+}
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
 
-/* ===== 타이포그래피 ===== */
-.serif {
+/* ======================= 4. 타이포그래피 ======================= */
+.serif,
+.display {
   font-family: var(--font-serif);
 }
 .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-}
-h1,
-h2,
-h3 {
-  font-family: var(--font-serif);
-  line-height: 1.2;
   letter-spacing: -0.01em;
 }
 
-/* 매거진 킥커(작은 상단 라벨) */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-serif);
+  line-height: 1.18;
+  letter-spacing: -0.018em;
+  font-weight: 700;
+  text-wrap: balance;
+}
+h1 {
+  font-size: var(--fs-h1);
+  font-weight: 900;
+}
+h2 {
+  font-size: var(--fs-h2);
+}
+h3 {
+  font-size: var(--fs-h3);
+}
+
+/* 킥커 — 기사 상단 소분류 라벨 */
 .kicker {
+  display: inline-block;
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--accent);
 }
 
-/* ===== 레이아웃 유틸 ===== */
+/* 데이트라인 / 바이라인 — 신문 기사 상단 메타 */
+.dateline {
+  font-family: var(--font-sans);
+  font-size: var(--fs-tiny);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.byline {
+  font-family: var(--font-serif);
+  font-size: var(--fs-small);
+  font-style: italic;
+  color: var(--ink-sub);
+}
+
+/* 리드문 — 헤드라인 바로 아래 요약 */
+.lead {
+  font-family: var(--font-serif);
+  font-size: var(--fs-lead);
+  line-height: 1.68;
+  color: var(--ink-sub);
+}
+
+/* 본문 조판 */
+.prose {
+  font-family: var(--font-serif);
+  font-size: var(--fs-lead);
+  line-height: 1.82;
+  color: var(--ink);
+  max-width: var(--maxw-read);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.prose p + p {
+  margin-top: 1.05em;
+  text-indent: 1em; /* 신문 조판: 단락 첫 줄 들여쓰기 */
+}
+.prose p:first-of-type {
+  text-indent: 0;
+}
+
+/* 드롭캡 — 첫 글자 장식 */
+.dropcap::first-letter {
+  float: left;
+  font-family: var(--font-serif);
+  font-size: 3.4em;
+  line-height: 0.82;
+  font-weight: 900;
+  padding: 0.06em 0.1em 0 0;
+  margin-right: 0.04em;
+  color: var(--accent);
+}
+
+/* ======================= 5. 레이아웃 유틸 ======================= */
 .container {
   width: 100%;
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 clamp(14px, 3vw, 26px);
 }
 
-/* ===== 종이 카드 기본 형태(토큰) ===== */
+/* 신문 다단 조판 — 컬럼 사이에 세로 괘선 */
+.columns-2 {
+  columns: 2;
+  column-gap: clamp(20px, 3vw, 34px);
+  column-rule: var(--rule-hair) solid var(--border-strong);
+}
+.columns-2 > * {
+  break-inside: avoid;
+}
+@media (max-width: 640px) {
+  .columns-2 {
+    columns: 1;
+    column-rule: none;
+  }
+}
+
+/* 세로 괘선 — 사이드바 분리용 */
+.rule-left {
+  border-left: var(--rule-hair) solid var(--border-strong);
+  padding-left: clamp(16px, 2.4vw, 28px);
+}
+@media (max-width: 900px) {
+  .rule-left {
+    border-left: 0;
+    padding-left: 0;
+    border-top: var(--rule-thin) solid var(--border);
+    padding-top: var(--sp-5);
+  }
+}
+
+/* 신문 제호 아래 이중선 */
+.rule-double {
+  border: 0;
+  border-top: var(--rule-med) solid var(--ink);
+  border-bottom: var(--rule-thin) solid var(--ink);
+  height: 4px;
+  background: transparent;
+}
+
+/* 접힘선(fold) — 지면이 한 번 접힌 듯한 아주 옅은 세로 그림자 */
+.fold-line {
+  position: relative;
+}
+.fold-line::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 50%;
+  width: 26px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--vignette), transparent);
+  opacity: 0.9;
+}
+@media (max-width: 900px) {
+  .fold-line::before {
+    display: none;
+  }
+}
+
+/* ======================= 6. 종이 표면 ======================= */
+
+/* 지면 질감: 배경 그레인 오버레이 (앱 셸에서 사용) */
+.paper-grain {
+  position: relative;
+}
+.paper-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: var(--grain);
+  background-size: 180px 180px;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: multiply;
+  z-index: 0;
+}
+.theme-dark .paper-grain::after {
+  mix-blend-mode: screen;
+}
+
+/* 기본 종이 카드 */
 .paper {
+  position: relative;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: var(--rule-thin) solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 1px 2px var(--shadow);
+  box-shadow:
+    0 1px 0 var(--shadow),
+    0 1px 3px -1px var(--shadow);
 }
 
-/* ===== 얇은 구분선 ===== */
-.rule {
-  border: 0;
-  border-top: 1px solid var(--border);
+/* ======================= 7. 이미지 처리 ======================= */
+
+/* 하프톤 — 망점 인쇄 재현. 이미지 위에 도트 마스크를 겹친다 */
+.halftone {
+  position: relative;
+  overflow: hidden;
 }
-.rule-strong {
-  border: 0;
-  border-top: 2px solid var(--ink);
+.halftone > img {
+  filter: var(--img-filter) grayscale(0.34);
+  transition:
+    filter var(--dur-slow) var(--ease),
+    transform var(--dur-slow) var(--ease-paper);
+}
+.halftone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.5) 0.9px, transparent 1.1px);
+  background-size: 3.2px 3.2px;
+  opacity: 0.34;
+  mix-blend-mode: multiply;
+  transition: opacity var(--dur-slow) var(--ease);
+}
+.theme-dark .halftone::after {
+  mix-blend-mode: soft-light;
+  opacity: 0.45;
+}
+/* 호버 시 망점이 걷히고 컬러가 돌아온다 */
+.halftone:hover > img,
+a:hover .halftone > img,
+article:hover .halftone > img {
+  filter: contrast(1.02) saturate(1) grayscale(0);
+  transform: scale(1.035);
+}
+.halftone:hover::after,
+a:hover .halftone::after,
+article:hover .halftone::after {
+  opacity: 0.08;
 }
 
-/* ===== 스켈레톤 로딩 ===== */
+/* ======================= 8. 스크롤 인터랙션 ======================= */
+
+/* v-reveal 디렉티브가 붙는 요소 (main.js에서 등록) */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.62s var(--ease),
+    transform 0.62s var(--ease-paper);
+}
+[data-reveal='in'] {
+  opacity: 1;
+  transform: none;
+  /* 등장이 끝나면 합성 레이어를 해제해 스크롤 부담을 줄인다 */
+  will-change: auto;
+}
+
+/* 읽기 진행바 — 상단 잉크 라인 */
+.read-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* ==================== 9. 호버 / 전환 이펙트 ==================== */
+
+/* 잉크 밑줄 — 링크/제목에 붙는 좌→우 밑줄 */
+.ink-underline {
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% var(--rule-med);
+  transition: background-size var(--dur) var(--ease-paper);
+  padding-bottom: 1px;
+}
+.ink-underline:hover,
+a:hover > .ink-underline,
+button:hover > .ink-underline,
+article:hover .ink-underline {
+  background-size: 100% var(--rule-med);
+}
+
+/* 종이 들림 — 카드 호버 */
+.lift {
+  transition:
+    transform var(--dur) var(--ease-paper),
+    box-shadow var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+.lift:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 2px 0 var(--shadow),
+    0 14px 28px -12px var(--shadow-strong);
+  border-color: var(--border-strong);
+}
+
+/* 잉크 채움 버튼 */
+.btn-ink {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: var(--rule-thin) solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-small);
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  transition: color var(--dur) var(--ease);
+}
+.btn-ink::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform var(--dur) var(--ease-paper);
+}
+.btn-ink:hover {
+  color: var(--surface);
+}
+.btn-ink:hover::before {
+  transform: scaleX(1);
+}
+.btn-ink:active {
+  transform: translateY(1px);
+}
+.btn-ink--accent {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-ink--accent::before {
+  background: var(--accent);
+}
+.btn-ink--accent:hover {
+  color: #fff;
+}
+
+/* 링크 텍스트 버튼 (→ 더보기) */
+.more-link {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: var(--fs-small);
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.more-link .arrow {
+  transition: transform var(--dur) var(--ease-paper);
+}
+.more-link:hover .arrow {
+  transform: translateX(4px);
+}
+
+/* --- 페이지 전환: 지면 넘김 — 새 지면이 살짝 올라오며 잉크가 잡힌다 --- */
+.page-enter-active {
+  transition:
+    opacity 0.42s var(--ease),
+    transform 0.42s var(--ease-paper),
+    filter 0.42s var(--ease);
+}
+.page-leave-active {
+  transition:
+    opacity 0.2s var(--ease),
+    transform 0.2s var(--ease);
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(14px);
+  filter: blur(2px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* ============= 10. 스켈레톤 · 스크롤바 · Element Plus ============= */
 .skel {
   background: var(--skeleton);
   background-size: 400% 100%;
-  animation: shimmer 1.3s ease infinite;
+  animation: shimmer 1.35s ease infinite;
   border-radius: var(--radius-sm);
 }
 @keyframes shimmer {
@@ -166,54 +608,97 @@ h3 {
   }
 }
 
-/* ===== 뷰 전환 트랜지션 ===== */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.28s var(--ease), transform 0.28s var(--ease);
-}
-.fade-enter-from {
-  opacity: 0;
-  transform: translateY(8px);
-}
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
-/* ===== 스크롤바 ===== */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border-strong);
   border-radius: 8px;
-  border: 2px solid var(--bg);
+  border: 3px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-mute);
 }
 
-/* ===== Element Plus 톤 정합 (에디토리얼) ===== */
+/* Element Plus 톤 정합 */
 :root {
-  --el-color-primary: #b3121b;
+  --el-color-primary: #a4141c;
+  --el-border-radius-base: 3px;
+  --el-font-family: 'Pretendard', -apple-system, sans-serif;
 }
 .theme-dark {
-  --el-color-primary: #ff5d52;
+  --el-color-primary: #ff6a5e;
+  --el-bg-color: var(--surface);
+  --el-bg-color-overlay: var(--surface-2);
+  --el-text-color-primary: var(--ink);
+  --el-text-color-regular: var(--ink-sub);
+  --el-border-color: var(--border);
+  --el-border-color-light: var(--border);
+  --el-fill-color-blank: var(--surface);
 }
 .el-button.is-round {
-  font-weight: 600;
+  font-weight: 700;
+}
+.el-input__wrapper,
+.el-textarea__inner {
+  border-radius: var(--radius) !important;
 }
 
-/* 접근성: 포커스 표시 */
+/* ================= 11. 접근성 / 반응형 / 인쇄 ================= */
 :focus-visible {
-  outline: 2px solid var(--link);
+  outline: var(--rule-med) solid var(--link);
   outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
-/* 모션 최소화 선호 사용자 배려 */
+/* 터치 디바이스에서는 호버 이펙트를 끈다 */
+@media (hover: none) {
+  .lift:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .halftone:hover > img {
+    transform: none;
+  }
+}
+
+/* 모션 최소화 선호 */
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* 실제 인쇄 */
+@media print {
+  .masthead,
+  .ticker,
+  .read-progress,
+  .app-footer,
+  button {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .paper {
+    border: 1px solid #999;
+    box-shadow: none;
   }
 }

@@ -3,7 +3,11 @@
 // 컴포넌트는 상태만 구독하고, fetch/loading/error 처리는 여기서 일원화한다.
 
 import { ref, shallowRef } from 'vue'
-import { fetchCurrentByCity, fetchForecastByCity, fetchCurrentByCoords } from '@/api/weather/weatherApi'
+import {
+  fetchCurrentByCity,
+  fetchForecastByCity,
+  fetchCurrentByCoords,
+} from '@/api/weather/weatherApi'
 
 export function useWeather() {
   const current = shallowRef(null)

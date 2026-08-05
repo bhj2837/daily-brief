@@ -1,7 +1,8 @@
 <script setup>
-// ===== 날씨 모듈 (기존 skala-weather 이식) =====
-// 검색 + 현재위치 + 대표 도시 히어로 + 예보 + 전국 그리드 + 즐겨찾기.
-// 몰입형 무드 배경은 제거하고 에디토리얼 톤으로 재구성. 로직/컴포저블/스토어는 그대로 재활용.
+// ===== 날씨면 =====
+// 검색 + 현재위치 + 대표 도시 관측 헤드 + 예보 + 전국 그리드 + 즐겨찾기.
+// 조판: 신문 기상면처럼 상단에 큰 관측 기록(온도·체감·습도·바람)을 표로 정리하고,
+//       그 아래 예보 스트립과 전국 시군 표를 배치한다.
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -29,7 +30,7 @@ const bookmarkStore = useBookmarkStore()
 const { cityIds } = storeToRefs(bookmarkStore)
 const { format } = useUnit()
 
-// 대표(히어로) 도시 로딩
+// 대표(관측 헤드) 도시 로딩
 const { current, forecast, isLoading, source, activeCityId, loadCity, loadByCoords } = useWeather()
 const { emoji, band } = useWeatherTheme(current)
 
@@ -48,6 +49,18 @@ const bandLabel = computed(
   () => ({ dawn: '이른 아침', day: '한낮', dusk: '해질녘', night: '밤' })[band.value],
 )
 const favCities = computed(() => cityIds.value.map(findCityById).filter(Boolean))
+
+// 관측 기록 표
+const observations = computed(() => {
+  const c = current.value
+  if (!c) return []
+  return [
+    { k: '체감', v: format(c.main?.feels_like) },
+    { k: '습도', v: `${c.main?.humidity ?? '-'}%` },
+    { k: '바람', v: `${c.wind?.speed ?? '-'} m/s` },
+    { k: '기압', v: c.main?.pressure ? `${c.main.pressure} hPa` : '-' },
+  ]
+})
 
 const selectCity = async (cityId) => {
   await loadCity(cityId)
@@ -76,43 +89,54 @@ onMounted(async () => {
 
 <template>
   <div class="weather">
+    <SectionHeader kicker="Weather" title="날씨" size="lg" />
+
     <!-- 검색 -->
     <div class="search-zone">
       <SearchBar @select-city="selectCity" />
-      <el-button class="loc-btn" round :loading="locating" @click="useMyLocation">📍 내 위치</el-button>
+      <el-button class="loc-btn" round :loading="locating" @click="useMyLocation">
+        📍 내 위치
+      </el-button>
     </div>
     <SearchHistory class="hist" @select-city="selectCity" />
 
-    <!-- 히어로 -->
-    <section class="hero" :class="{ loading: isLoading }">
-      <div v-if="current" class="hero-inner">
-        <div class="hero-left">
-          <div class="hero-city">
-            <span class="kicker">Now</span>
-            <h1 class="serif">{{ current.name }}</h1>
-            <FavoriteButton v-if="heroCity" :city-id="heroCity.id" />
+    <!-- 관측 헤드 -->
+    <section class="obs" :class="{ loading: isLoading }">
+      <template v-if="current">
+        <div class="obs-main">
+          <div class="obs-left">
+            <div class="obs-city">
+              <span class="kicker">Now</span>
+              <h2 class="serif">{{ current.name }}</h2>
+              <FavoriteButton v-if="heroCity" :city-id="heroCity.id" />
+            </div>
+            <p class="obs-desc">{{ bandLabel }} · {{ current.weather?.[0]?.description }}</p>
+            <SourceBadge :source="source || 'mock'" class="obs-src" />
           </div>
-          <p class="hero-sub">{{ bandLabel }} · {{ current.weather?.[0]?.description }}</p>
-          <SourceBadge :source="source || 'mock'" class="hero-src" />
-          <div class="hero-metrics mono">
-            <span>체감 {{ format(current.main?.feels_like) }}</span>
-            <span>💧 {{ current.main?.humidity }}%</span>
-            <span>🌬 {{ current.wind?.speed }}m/s</span>
+
+          <div class="obs-right">
+            <span class="obs-emoji">{{ emoji }}</span>
+            <span class="obs-temp mono">{{ format(current.main?.temp) }}</span>
           </div>
-          <el-button v-if="heroCity" type="primary" round @click="goDetail(heroCity.id)">
-            상세 관측 정보 →
-          </el-button>
         </div>
-        <div class="hero-right">
-          <div class="hero-emoji">{{ emoji }}</div>
-          <div class="hero-temp mono">{{ format(current.main?.temp) }}</div>
+
+        <!-- 관측 기록 표 -->
+        <dl class="obs-table">
+          <div v-for="o in observations" :key="o.k">
+            <dt class="dateline">{{ o.k }}</dt>
+            <dd class="mono">{{ o.v }}</dd>
+          </div>
+        </dl>
+
+        <div v-if="heroCity" class="obs-foot">
+          <button class="btn-ink" @click="goDetail(heroCity.id)">상세 관측 정보 →</button>
         </div>
-      </div>
-      <SkeletonBlock v-else height="180px" />
+      </template>
+      <SkeletonBlock v-else height="200px" />
     </section>
 
     <!-- 예보 -->
-    <section class="paper forecast-zone">
+    <section v-reveal class="paper forecast-zone">
       <ForecastStrip :forecast="forecast" />
     </section>
 
@@ -121,8 +145,9 @@ onMounted(async () => {
       <SectionHeader kicker="Saved" title="즐겨찾기" />
       <div class="city-grid">
         <WeatherCard
-          v-for="c in favCities"
+          v-for="(c, i) in favCities"
           :key="c.id"
+          v-reveal="{ index: i }"
           :city-id="c.id"
           :weather="grid[c.id]"
           @select-card="goDetail"
@@ -134,12 +159,13 @@ onMounted(async () => {
     <section>
       <SectionHeader kicker="Nationwide" title="전국 날씨" />
       <div v-if="gridLoading" class="city-grid">
-        <SkeletonBlock v-for="n in 6" :key="n" height="150px" />
+        <SkeletonBlock v-for="n in 6" :key="n" height="152px" radius="3px" />
       </div>
       <div v-else class="city-grid">
         <WeatherCard
-          v-for="c in CITIES"
+          v-for="(c, i) in CITIES"
           :key="c.id"
+          v-reveal="{ index: i }"
           :city-id="c.id"
           :weather="grid[c.id]"
           @select-card="goDetail"
@@ -152,7 +178,7 @@ onMounted(async () => {
 <style scoped>
 .weather {
   display: grid;
-  gap: 22px;
+  gap: var(--sp-6);
 }
 .search-zone {
   display: flex;
@@ -166,84 +192,120 @@ onMounted(async () => {
   white-space: nowrap;
 }
 .hist {
-  margin-top: -8px;
+  margin-top: calc(-1 * var(--sp-4));
 }
 
-.hero {
+/* ===== 관측 헤드 ===== */
+.obs {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 30px;
-  box-shadow: 0 1px 2px var(--shadow);
-  min-height: 200px;
-  transition: opacity 0.3s;
+  border: var(--rule-thin) solid var(--border);
+  border-top: var(--rule-thick) solid var(--ink);
+  border-radius: var(--radius);
+  padding: clamp(20px, 3vw, 30px);
+  box-shadow: 0 1px 0 var(--shadow);
+  transition: opacity var(--dur) var(--ease);
 }
-.hero.loading {
-  opacity: 0.6;
+.obs.loading {
+  opacity: 0.55;
 }
-.hero-inner {
+.obs-main {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 24px;
+  align-items: flex-start;
+  gap: var(--sp-5);
+  padding-bottom: var(--sp-4);
+  border-bottom: var(--rule-med) solid var(--ink);
 }
-.hero-city {
+.obs-city {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
-.hero-city h1 {
-  font-size: 40px;
+.obs-city h2 {
+  font-size: var(--fs-h1);
   font-weight: 900;
+  letter-spacing: -0.03em;
 }
-.hero-sub {
+.obs-desc {
   color: var(--ink-sub);
-  font-size: 16px;
+  font-family: var(--font-serif);
+  font-size: var(--fs-lead);
   margin: 6px 0 10px;
 }
-.hero-src {
-  margin-bottom: 14px;
-}
-.hero-metrics {
+.obs-right {
   display: flex;
-  gap: 16px;
-  font-size: 15px;
-  margin-bottom: 18px;
-  color: var(--ink-sub);
+  align-items: center;
+  gap: var(--sp-3);
+  flex-shrink: 0;
 }
-.hero-right {
-  text-align: center;
-}
-.hero-emoji {
-  font-size: 76px;
+.obs-emoji {
+  font-size: clamp(44px, 7vw, 68px);
   line-height: 1;
 }
-.hero-temp {
-  font-size: 68px;
+.obs-temp {
+  font-size: clamp(42px, 8vw, 66px);
   font-weight: 800;
-  letter-spacing: -3px;
+  letter-spacing: -0.045em;
+  line-height: 1;
 }
+
+/* 관측 기록 표 */
+.obs-table {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin-top: var(--sp-4);
+}
+.obs-table > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-right: var(--rule-hair) solid var(--border);
+}
+.obs-table > div:last-child {
+  border-right: 0;
+}
+.obs-table dd {
+  font-size: 16px;
+  font-weight: 800;
+}
+.obs-foot {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: var(--rule-hair) solid var(--border);
+}
+
 .forecast-zone {
-  padding: 20px 22px;
+  padding: var(--sp-5);
 }
 .city-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
   gap: 14px;
 }
+
 @media (max-width: 640px) {
-  .hero {
-    padding: 22px;
-  }
-  .hero-inner {
+  .obs-main {
     flex-direction: column;
+    align-items: center;
     text-align: center;
   }
-  .hero-city {
+  .obs-city {
     justify-content: center;
   }
-  .hero-temp {
-    font-size: 56px;
+  .obs-table {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 8px;
+  }
+  .obs-table > div:nth-child(2n) {
+    border-right: 0;
+  }
+  .search-zone {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 </style>

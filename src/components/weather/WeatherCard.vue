@@ -1,6 +1,7 @@
 <script setup>
 // 도시 하나의 현재 날씨 요약 카드.
 // props로 날씨 객체를 받고, 클릭 시 select-card 이벤트를 부모에게 전달 (강의 4장 props/emit).
+// 조판: 신문 기상면의 도시별 관측 박스. 호버 시 종이가 살짝 들린다.
 import { computed } from 'vue'
 import { useUnit } from '@/composables/useUnit'
 import { weatherEmoji } from '@/utils/format'
@@ -21,7 +22,7 @@ const heatLabel = computed(() => (temp.value >= 25 ? '더움' : '선선함'))
 </script>
 
 <template>
-  <article class="wcard" @click="emit('select-card', cityId)">
+  <article class="wcard lift" @click="emit('select-card', cityId)">
     <div class="top">
       <div class="city">
         <h3 class="serif">{{ weather.name }}</h3>
@@ -30,6 +31,8 @@ const heatLabel = computed(() => (temp.value >= 25 ? '더움' : '선선함'))
       <FavoriteButton :city-id="cityId" />
     </div>
 
+    <div class="rule-thin" aria-hidden="true" />
+
     <div class="mid">
       <span class="emoji">{{ weatherEmoji(main) }}</span>
       <span class="temp mono">{{ format(temp) }}</span>
@@ -37,7 +40,9 @@ const heatLabel = computed(() => (temp.value >= 25 ? '더움' : '선선함'))
 
     <div class="bottom">
       <span class="heat" :class="temp >= 25 ? 'hot' : 'cool'">{{ heatLabel }}</span>
-      <span class="meta">💧 {{ weather.main?.humidity }}% · 🌬 {{ weather.wind?.speed }}m/s</span>
+      <span class="meta mono">
+        💧 {{ weather.main?.humidity }}% · 🌬 {{ weather.wind?.speed }}m/s
+      </span>
     </div>
 
     <span v-if="weather._mock" class="mock-tag">SAMPLE</span>
@@ -48,78 +53,108 @@ const heatLabel = computed(() => (temp.value >= 25 ? '더움' : '선선함'))
 .wcard {
   position: relative;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: var(--rule-thin) solid var(--border);
   border-radius: var(--radius);
-  padding: 16px 18px;
+  padding: 14px 16px 15px;
   cursor: pointer;
-  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), border-color 0.2s;
   overflow: hidden;
 }
-.wcard:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 26px var(--shadow-strong);
-  border-color: var(--border-strong);
+/* 좌측 잉크 마진 마크 — 호버 시 그어진다 */
+.wcard::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+  transition: transform var(--dur) var(--ease-paper);
 }
+.wcard:hover::before {
+  transform: scaleY(1);
+}
+
 .top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 8px;
+  padding-bottom: 9px;
+}
+.city {
+  min-width: 0;
 }
 .city h3 {
-  font-size: 18px;
+  font-size: 17.5px;
   font-weight: 700;
 }
 .desc {
-  font-size: 13px;
+  font-size: var(--fs-small);
   color: var(--ink-sub);
+}
+.rule-thin {
+  height: var(--rule-hair);
+  background: var(--border-strong);
 }
 .mid {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 8px 0 12px;
+  margin: 10px 0 12px;
 }
 .emoji {
-  font-size: 38px;
+  font-size: 36px;
   line-height: 1;
+  transition: transform var(--dur) var(--ease-paper);
+}
+.wcard:hover .emoji {
+  transform: scale(1.1) rotate(-5deg);
 }
 .temp {
-  font-size: 36px;
+  font-size: 34px;
   font-weight: 800;
-  letter-spacing: -1px;
+  letter-spacing: -0.035em;
+  margin-left: auto;
 }
 .bottom {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
+  gap: 8px;
+  font-size: var(--fs-tiny);
 }
 .heat {
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-weight: 700;
-  border: 1px solid var(--border);
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border: var(--rule-thin) solid var(--border-strong);
   color: var(--ink-sub);
+  white-space: nowrap;
 }
 .heat.hot {
   color: var(--down);
-  border-color: color-mix(in srgb, var(--down) 30%, var(--border));
+  border-color: color-mix(in srgb, var(--down) 38%, var(--border-strong));
 }
 .heat.cool {
   color: var(--link);
-  border-color: color-mix(in srgb, var(--link) 30%, var(--border));
+  border-color: color-mix(in srgb, var(--link) 38%, var(--border-strong));
 }
 .meta {
-  color: var(--ink-sub);
+  color: var(--ink-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .mock-tag {
   position: absolute;
-  top: 12px;
-  right: 42px;
+  top: 11px;
+  right: 40px;
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: 1px;
-  color: var(--ink-mute);
-  opacity: 0.6;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
 }
 </style>

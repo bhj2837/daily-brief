@@ -60,7 +60,12 @@ export const fetchTechNews = async (limit = 20) => {
     const { data: ids } = await hn.get('/topstories.json')
     const top = (ids || []).slice(0, limit)
     const items = await Promise.all(
-      top.map((id) => hn.get(`/item/${id}.json`).then((r) => r.data).catch(() => null)),
+      top.map((id) =>
+        hn
+          .get(`/item/${id}.json`)
+          .then((r) => r.data)
+          .catch(() => null),
+      ),
     )
     const list = items.filter(Boolean).map(mapHn)
     return { data: list, source: 'api' }
@@ -79,7 +84,12 @@ export const fetchHnItem = async (rawId) => {
 export const fetchHnComments = async (kids = [], limit = 6) => {
   const ids = kids.slice(0, limit)
   const items = await Promise.all(
-    ids.map((id) => hn.get(`/item/${id}.json`).then((r) => r.data).catch(() => null)),
+    ids.map((id) =>
+      hn
+        .get(`/item/${id}.json`)
+        .then((r) => r.data)
+        .catch(() => null),
+    ),
   )
   return items
     .filter((c) => c && !c.deleted && !c.dead && c.text)

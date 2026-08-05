@@ -12,10 +12,12 @@ const query = ref('')
 
 // el-autocomplete가 요구하는 (query, cb) 형태의 서제스트 함수. 한글/영문 부분일치.
 const querySuggestions = (q, cb) => {
-  const kw = String(q || '').trim().toLowerCase()
-  const list = (kw ? CITIES.filter((c) => c.ko.includes(kw) || c.en.toLowerCase().includes(kw)) : CITIES).map(
-    (c) => ({ value: c.ko, city: c }),
-  )
+  const kw = String(q || '')
+    .trim()
+    .toLowerCase()
+  const list = (
+    kw ? CITIES.filter((c) => c.ko.includes(kw) || c.en.toLowerCase().includes(kw)) : CITIES
+  ).map((c) => ({ value: c.ko, city: c }))
   cb(list)
 }
 
@@ -56,17 +58,21 @@ watch(query, (val) => {
 </template>
 
 <style scoped>
+/* 신문 검색란: 아래만 굵은 잉크 밑줄이 그어진 기입란 */
 .searchbar {
   display: flex;
   align-items: center;
   gap: 8px;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 4px 8px 4px 16px;
+  border: var(--rule-thin) solid var(--border);
+  border-bottom: var(--rule-med) solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 4px 10px 3px 14px;
+  transition: border-color var(--dur) var(--ease);
 }
 .searchbar:focus-within {
   border-color: var(--border-strong);
+  border-bottom-color: var(--accent);
 }
 .ic {
   font-size: 15px;

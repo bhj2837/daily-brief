@@ -91,7 +91,10 @@ export const fetchWeatherWttr = async (lat, lon, name = '') => {
       pressure: num(cc.pressure),
     },
     // km/h → m/s
-    wind: { speed: Math.round((num(cc.windspeedKmph) / 3.6) * 10) / 10, deg: num(cc.winddirDegree) || 0 },
+    wind: {
+      speed: Math.round((num(cc.windspeedKmph) / 3.6) * 10) / 10,
+      deg: num(cc.winddirDegree) || 0,
+    },
     visibility: (num(cc.visibility) || 10) * 1000,
     sys: { country: 'KR' },
   }

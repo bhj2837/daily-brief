@@ -1,6 +1,7 @@
 <script setup>
 // ===== 종목 상세 (동적 라우트 /markets/:id) =====
 // 환율/코인/증시 중 한 항목을 큰 라인차트와 함께 보여준다.
+// 조판: 시세 헤드(대형 등폭 숫자) → 도표 → 통계 표(고가/저가/변동폭).
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMarkets } from '@/composables/useMarkets'
@@ -24,23 +25,41 @@ const found = computed(() => {
   return null
 })
 
+// 추세 통계 — 신문 시세표 하단의 고가/저가/변동폭 표기
+const stats = computed(() => {
+  const p = found.value?.row?.spark?.filter((v) => v != null) || []
+  if (p.length < 2) return null
+  const max = Math.max(...p)
+  const min = Math.min(...p)
+  const fmt = (v) => (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(4).replace(/0+$/, ''))
+  return {
+    high: fmt(max),
+    low: fmt(min),
+    range: (((max - min) / (min || 1)) * 100).toFixed(2),
+    n: p.length,
+  }
+})
+
 const load = async () => {
   loading.value = true
   await loadAll()
   loading.value = false
 }
-watch(() => props.id, () => {})
+watch(
+  () => props.id,
+  () => {},
+)
 onMounted(load)
 </script>
 
 <template>
   <div class="md">
-    <button class="back" @click="router.push('/markets')">← 마켓</button>
+    <button class="back" @click="router.push('/markets')"><span class="arrow">←</span> 마켓</button>
 
     <div v-if="loading" class="paper loading">
-      <SkeletonBlock width="140px" height="16px" radius="4px" />
-      <SkeletonBlock height="40px" width="200px" radius="6px" />
-      <SkeletonBlock height="170px" radius="8px" />
+      <SkeletonBlock width="140px" height="14px" radius="2px" />
+      <SkeletonBlock height="40px" width="200px" radius="3px" />
+      <SkeletonBlock height="170px" radius="3px" />
     </div>
 
     <el-result
@@ -55,11 +74,17 @@ onMounted(load)
     </el-result>
 
     <template v-else>
-      <BaseCard :kicker="sectionLabel[found.sectionKey]" :title="found.row.label">
+      <BaseCard
+        :kicker="sectionLabel[found.sectionKey]"
+        :title="found.row.label"
+        variant="clip"
+        class="quote-card"
+      >
         <template #action>
           <SourceBadge :source="found.source || 'mock'" />
         </template>
 
+        <!-- 시세 헤드 -->
         <div class="head">
           <div class="price mono">{{ found.row.display }}</div>
           <div
@@ -69,11 +94,35 @@ onMounted(load)
             {{ found.row.change > 0 ? '▲' : found.row.change < 0 ? '▼' : '·' }}
             {{ Math.abs(found.row.change).toFixed(2) }}%
           </div>
-          <div v-if="found.row.name" class="name">{{ found.row.name }}</div>
+          <div v-if="found.row.name" class="name byline">{{ found.row.name }}</div>
         </div>
 
-        <LineChart :points="found.row.spark" trend :height="220" />
-        <p class="note">최근 추세 · {{ sectionLabel[found.sectionKey] }}</p>
+        <div class="chart-rule" aria-hidden="true" />
+        <LineChart :points="found.row.spark" trend :height="230" />
+
+        <!-- 통계 표 -->
+        <dl v-if="stats" class="stats">
+          <div>
+            <dt class="dateline">고가</dt>
+            <dd class="mono">{{ stats.high }}</dd>
+          </div>
+          <div>
+            <dt class="dateline">저가</dt>
+            <dd class="mono">{{ stats.low }}</dd>
+          </div>
+          <div>
+            <dt class="dateline">변동폭</dt>
+            <dd class="mono">{{ stats.range }}%</dd>
+          </div>
+          <div>
+            <dt class="dateline">표본</dt>
+            <dd class="mono">{{ stats.n }}p</dd>
+          </div>
+        </dl>
+
+        <template #footer>
+          <p class="note">최근 추세 · {{ sectionLabel[found.sectionKey] }}</p>
+        </template>
       </BaseCard>
     </template>
   </div>
@@ -82,8 +131,8 @@ onMounted(load)
 <style scoped>
 .md {
   display: grid;
-  gap: 16px;
-  max-width: 760px;
+  gap: var(--sp-4);
+  max-width: calc(var(--maxw-read) + 120px);
   margin: 0 auto;
 }
 .back {
@@ -91,34 +140,45 @@ onMounted(load)
   background: transparent;
   color: var(--ink-sub);
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--fs-small);
   cursor: pointer;
   justify-self: start;
   padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back .arrow {
+  transition: transform var(--dur) var(--ease-paper);
 }
 .back:hover {
   color: var(--ink);
 }
-.loading {
-  padding: 26px;
-  display: grid;
-  gap: 16px;
+.back:hover .arrow {
+  transform: translateX(-4px);
 }
+.loading {
+  padding: var(--sp-6);
+  display: grid;
+  gap: var(--sp-4);
+}
+
 .head {
   display: flex;
   align-items: baseline;
-  gap: 14px;
-  margin-bottom: 18px;
+  gap: var(--sp-4);
   flex-wrap: wrap;
+  padding-bottom: var(--sp-4);
 }
 .price {
-  font-size: 40px;
+  font-size: clamp(32px, 5.5vw, 46px);
   font-weight: 800;
-  letter-spacing: -1px;
+  letter-spacing: -0.035em;
+  line-height: 1;
 }
 .chg {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 800;
 }
 .chg.up {
   color: var(--up);
@@ -127,13 +187,56 @@ onMounted(load)
   color: var(--down);
 }
 .name {
-  color: var(--ink-sub);
-  font-size: 15px;
+  margin-left: auto;
 }
+
+.chart-rule {
+  height: var(--rule-med);
+  background: var(--ink);
+  margin-bottom: var(--sp-4);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin-top: var(--sp-5);
+  border-top: var(--rule-thin) solid var(--border-strong);
+  padding-top: var(--sp-3);
+}
+.stats > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border-right: var(--rule-hair) solid var(--border);
+}
+.stats > div:last-child {
+  border-right: 0;
+}
+.stats dd {
+  font-size: 15px;
+  font-weight: 800;
+}
+
 .note {
-  margin-top: 12px;
-  font-size: 12px;
+  font-size: var(--fs-tiny);
   color: var(--ink-mute);
   text-align: right;
+}
+
+@media (max-width: 560px) {
+  .name {
+    margin-left: 0;
+    width: 100%;
+  }
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 10px;
+  }
+  .stats > div:nth-child(2n) {
+    border-right: 0;
+  }
 }
 </style>

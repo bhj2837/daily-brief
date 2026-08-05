@@ -63,7 +63,15 @@ export const fetchRates = async () => {
       const value = series[series.length - 1]
       const prev = series[series.length - 2] ?? value
       const change = prev ? ((value - prev) / prev) * 100 : 0
-      return withDisplay({ id: sym.toLowerCase(), label, name, value, change, spark: downsample(series), isLive: true })
+      return withDisplay({
+        id: sym.toLowerCase(),
+        label,
+        name,
+        value,
+        change,
+        spark: downsample(series),
+        isLive: true,
+      })
     })
     return { data: rows, source: 'api' }
   } catch (e) {
@@ -107,7 +115,10 @@ export const fetchCrypto = async () => {
     return { data: rows, source: 'api' }
   } catch (e) {
     console.warn('[markets] 코인 폴백:', e.message)
-    return { data: MOCK_CRYPTO.map((r) => withDisplay({ ...r, isLive: false }, '$')), source: 'mock' }
+    return {
+      data: MOCK_CRYPTO.map((r) => withDisplay({ ...r, isLive: false }, '$')),
+      source: 'mock',
+    }
   }
 }
 

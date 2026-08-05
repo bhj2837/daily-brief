@@ -176,7 +176,8 @@ export function useWordChain() {
 
   // 비동기: 로컬 사전에 없으면 온라인(Wiktionary) 검증
   const submit = async (raw) => {
-    if (status.value !== 'playing' || turn.value !== 'player' || checking.value) return { ok: false }
+    if (status.value !== 'playing' || turn.value !== 'player' || checking.value)
+      return { ok: false }
     const v = validateFormat(raw)
     if (!v.ok) {
       message.value = v.reason
@@ -263,10 +264,30 @@ export function useWordChain() {
   onUnmounted(stopTimer)
 
   return {
-    chain, status, result, turn, checking, computerThinking, score, combo, maxCombo,
-    difficulty, timeLeft, message,
-    soundOn, hintWord, hintsUsed,
-    lastWord, lastChar, starts, timeRatio, chainLength,
-    start, submit, surrender, hint, toggleSound,
+    chain,
+    status,
+    result,
+    turn,
+    checking,
+    computerThinking,
+    score,
+    combo,
+    maxCombo,
+    difficulty,
+    timeLeft,
+    message,
+    soundOn,
+    hintWord,
+    hintsUsed,
+    lastWord,
+    lastChar,
+    starts,
+    timeRatio,
+    chainLength,
+    start,
+    submit,
+    surrender,
+    hint,
+    toggleSound,
   }
 }
