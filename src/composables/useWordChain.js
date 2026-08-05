@@ -30,6 +30,7 @@ export function useWordChain() {
   const soundOn = ref(true)
   const hintWord = ref('')
   const hintsUsed = ref(0)
+  const hintLoading = ref(false) // 힌트가 온라인 사전을 탐색 중
   const computerThinking = ref(false) // 컴퓨터가 온라인 사전을 탐색 중
 
   let timerId = null
@@ -48,7 +49,12 @@ export function useWordChain() {
   const timeRatio = computed(() => Math.max(0, timeLeft.value / TIME_LIMIT))
   const chainLength = computed(() => chain.value.length)
 
-  // ---- 후보 탐색 (컴퓨터는 로컬 사전에서만 생성) ----
+  // 컴포넌트가 사라진 뒤 늦게 도착한 비동기 작업이 타이머를 되살리는 것을 막는다.
+  // (게임 도중 다른 페이지로 이동했는데 전적에 패배가 기록되는 문제 방지)
+  let disposed = false
+  const isAlive = () => !disposed && status.value === 'playing'
+
+  // ---- 후보 탐색 (로컬 사전 인덱스 기반) ----
   const candidatesFor = (ch) =>
     allowedStarts(ch)
       .flatMap((s) => idx[s] || [])
@@ -61,19 +67,27 @@ export function useWordChain() {
       timerId = null
     }
   }
+  // 남은 시간을 유지한 채 다시 흐르게 한다 (온라인 조회로 잠시 멈춘 뒤 복귀용)
+  const resumeTimer = () => {
+    stopTimer()
+    if (timeLeft.value <= 0) return
+    timerId = setInterval(tick, TICK)
+  }
   const startTimer = () => {
     stopTimer()
     timeLeft.value = TIME_LIMIT
-    timerId = setInterval(() => {
-      timeLeft.value = Math.round((timeLeft.value - TICK / 1000) * 10) / 10
-      if (timeLeft.value <= 0) {
-        timeLeft.value = 0
-        stopTimer()
-        message.value = '시간 초과!'
-        play('lose')
-        endGame('lose')
-      }
-    }, TICK)
+    timerId = setInterval(tick, TICK)
+  }
+  // 매 틱마다 남은 시간을 깎고, 0이 되면 패배 처리
+  function tick() {
+    timeLeft.value = Math.round((timeLeft.value - TICK / 1000) * 10) / 10
+    if (timeLeft.value <= 0) {
+      timeLeft.value = 0
+      stopTimer()
+      message.value = '시간 초과!'
+      play('lose')
+      endGame('lose')
+    }
   }
 
   // ---- 컴퓨터 AI ----
@@ -91,14 +105,21 @@ export function useWordChain() {
     return c[Math.floor(Math.random() * Math.min(4, c.length))]
   }
 
-  // 2) 로컬에 없으면 Wiktionary에서 실제 단어 탐색(플레이어와 동일한 사전 활용)
-  const pickOnline = async (ch) => {
+  // 위키낱말사전에서 ch로 이을 수 있는 실제 단어 후보를 모은다.
+  // 컴퓨터 AI와 힌트가 공용으로 쓴다(두음법칙으로 허용되는 시작 글자를 모두 조회).
+  // fetchWordsByPrefix는 실패 시 빈 배열을 돌려주므로 예외를 던지지 않는다.
+  const fetchOnlineCandidates = async (ch) => {
     const lists = await Promise.all(allowedStarts(ch).map((s) => fetchWordsByPrefix(s)))
     const cands = [...new Set(lists.flat())].filter((w) => !used.has(w))
-    if (!cands.length) return null
-    // 명사 성격 우선(용언 '~다' 제외), 없으면 전체에서 선택
-    const preferred = cands.filter((w) => !w.endsWith('다'))
-    const pool = preferred.length ? preferred : cands
+    // 명사 성격 우선(용언 '~다' 제외), 하나도 없으면 전체 사용
+    const nouns = cands.filter((w) => !w.endsWith('다'))
+    return nouns.length ? nouns : cands
+  }
+
+  // 2) 로컬에 없으면 Wiktionary에서 실제 단어 탐색(플레이어와 동일한 사전 활용)
+  const pickOnline = async (ch) => {
+    const pool = await fetchOnlineCandidates(ch)
+    if (!pool.length) return null
     return pool[Math.floor(Math.random() * pool.length)]
   }
 
@@ -163,6 +184,7 @@ export function useWordChain() {
     maxCombo.value = 0
     hintWord.value = ''
     hintsUsed.value = 0
+    hintLoading.value = false
     result.value = null
     message.value = ''
     checking.value = false
@@ -222,19 +244,43 @@ export function useWordChain() {
     return { ok: true, gain }
   }
 
-  // ---- 힌트: 로컬 사전에서 이을 수 있는 단어 1개 (점수 -5) ----
+  // ---- 힌트: 이을 수 있는 단어 1개 (점수 -5) ----
+  // 컴퓨터 AI와 동일하게 로컬 사전 + 위키낱말사전을 함께 뒤져서,
+  // 로컬 440단어에 갇히지 않고 실제 사용 가능한 단어를 폭넓게 제시한다.
+  // 온라인 조회 동안에는 타이머를 멈춰 네트워크 지연이 시간을 깎지 않게 한다.
   const HINT_COST = 5
-  const hint = () => {
+  const hint = async () => {
     if (status.value !== 'playing' || turn.value !== 'player' || checking.value) return
-    const c = candidatesFor(lastChar.value)
-    if (!c.length) {
+    if (hintLoading.value) return
+
+    const local = candidatesFor(lastChar.value)
+
+    // 온라인 후보 조회 (실패하면 빈 배열 → 로컬만으로 진행)
+    hintLoading.value = true
+    stopTimer()
+    let online = []
+    try {
+      online = await fetchOnlineCandidates(lastChar.value)
+    } finally {
+      hintLoading.value = false
+    }
+
+    // 조회 중 게임이 끝났으면 아무것도 하지 않는다
+    if (status.value !== 'playing' || turn.value !== 'player') return
+    // 멈춰뒀던 시간을 그대로 이어서 흐르게 한다 (힌트로 시간이 초기화되지 않도록)
+    resumeTimer()
+
+    // 로컬 + 온라인을 합쳐 중복 제거 (온라인 단어도 submit에서 사전 검증을 통과한다)
+    const pool = [...new Set([...local, ...online])]
+    if (!pool.length) {
       message.value = '힌트: 이을 만한 단어를 못 찾았어요.'
       return
     }
-    const word = c[Math.floor(Math.random() * c.length)]
-    hintWord.value = word
+
+    hintWord.value = pool[Math.floor(Math.random() * pool.length)]
     hintsUsed.value += 1
     score.value = Math.max(0, score.value - HINT_COST)
+    message.value = ''
     play('hint')
   }
 
@@ -243,6 +289,7 @@ export function useWordChain() {
     result.value = res
     turn.value = 'player'
     checking.value = false
+    hintLoading.value = false
     hintWord.value = ''
     stopTimer()
     gameStore.record({
@@ -279,6 +326,7 @@ export function useWordChain() {
     soundOn,
     hintWord,
     hintsUsed,
+    hintLoading,
     lastWord,
     lastChar,
     starts,

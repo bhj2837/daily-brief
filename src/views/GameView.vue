@@ -15,8 +15,9 @@ import ChainList from '@/components/game/ChainList.vue'
 const gameStore = useGameStore()
 const { best, wins, losses, longest, bestCombo, winRate } = storeToRefs(gameStore)
 
-const useHint = () => {
-  hint()
+// 힌트는 온라인 사전까지 조회하므로 비동기 — 완료 후 입력창으로 포커스를 되돌린다
+const useHint = async () => {
+  await hint()
   focusInput()
 }
 
@@ -35,6 +36,7 @@ const {
   soundOn,
   hintWord,
   hintsUsed,
+  hintLoading,
   lastChar,
   starts,
   timeRatio,
@@ -82,6 +84,13 @@ const patchNotes = [
     items: [
       '컴퓨터도 로컬 사전이 막히면 위키낱말사전에서 실제 단어를 탐색해 이어감',
       '이제 실제로 이을 단어가 없을 때만 컴퓨터가 패배',
+    ],
+  },
+  {
+    v: 'v1.4 · 힌트 확장',
+    items: [
+      '힌트도 로컬 사전에 더해 위키낱말사전에서 실제 단어를 찾아 제시',
+      '힌트 조회 중에는 타이머를 멈추고, 남은 시간 그대로 이어서 재개',
     ],
   },
 ]
@@ -246,14 +255,28 @@ onMounted(() => gameStore.init())
             <p v-if="checking" class="checking-note">
               🔎 로컬 사전에 없어 온라인 사전으로 확인하고 있어요…
             </p>
-            <p v-if="hintWord" class="hint-word">
+            <p v-if="hintLoading" class="checking-note">
+              💡 로컬 사전과 온라인 사전에서 이을 단어를 찾는 중…
+            </p>
+            <p v-else-if="hintWord" class="hint-word">
               💡 예시: <b class="serif">{{ hintWord }}</b>
             </p>
             <div class="play-tools">
-              <button class="ghost" :disabled="turn !== 'player' || checking" @click="useHint">
-                💡 힌트 (-5점{{ hintsUsed ? ` · ${hintsUsed}회` : '' }})
+              <button
+                class="ghost"
+                :disabled="turn !== 'player' || checking || hintLoading"
+                @click="useHint"
+              >
+                💡
+                {{
+                  hintLoading ? '찾는 중…' : `힌트 (-5점${hintsUsed ? ` · ${hintsUsed}회` : ''})`
+                }}
               </button>
-              <button class="surrender" :disabled="checking || computerThinking" @click="surrender">
+              <button
+                class="surrender"
+                :disabled="checking || computerThinking || hintLoading"
+                @click="surrender"
+              >
                 기권하기
               </button>
             </div>
