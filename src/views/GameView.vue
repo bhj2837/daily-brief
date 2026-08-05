@@ -99,6 +99,18 @@ onMounted(() => gameStore.init())
       </template>
     </SectionHeader>
 
+    <details class="patch">
+      <summary>패치노트</summary>
+      <div class="patch-body">
+        <div v-for="p in patchNotes" :key="p.v" class="patch-ver">
+          <b>{{ p.v }}</b>
+          <ul>
+            <li v-for="(it, i) in p.items" :key="i">{{ it }}</li>
+          </ul>
+        </div>
+      </div>
+    </details>
+
     <div class="layout">
       <!-- 게임 보드 -->
       <BaseCard class="board">
@@ -238,18 +250,6 @@ onMounted(() => gameStore.init())
       <a href="https://ko.wiktionary.org" target="_blank" rel="noopener noreferrer">위키낱말사전</a>
       API로 실제 존재 여부를 확인해 인정합니다. 한글 자모 분해로 두음법칙까지 검증합니다.
     </p>
-
-    <details class="patch">
-      <summary>패치노트</summary>
-      <div class="patch-body">
-        <div v-for="p in patchNotes" :key="p.v" class="patch-ver">
-          <b>{{ p.v }}</b>
-          <ul>
-            <li v-for="(it, i) in p.items" :key="i">{{ it }}</li>
-          </ul>
-        </div>
-      </div>
-    </details>
   </div>
 </template>
 
@@ -274,8 +274,7 @@ onMounted(() => gameStore.init())
   color: var(--accent);
 }
 .patch {
-  max-width: 620px;
-  margin: 10px auto 0;
+  margin: 2px 0 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface-2);
