@@ -36,6 +36,26 @@ const DIFFS = [
   { key: 'hard', label: '어려움', desc: '끊기 노림수' },
 ]
 
+// 끝말잇기 변경 이력
+const patchNotes = [
+  {
+    v: 'v1.0 · 기본',
+    items: ['한글 자모 분해 기반 두음법칙(려→여·락→낙) 판정', '엄선한 명사 로컬 사전 + 난이도별 컴퓨터 AI', '12초 타이머 · 점수/콤보 · 전적 localStorage 저장'],
+  },
+  {
+    v: 'v1.1 · 편의',
+    items: ['힌트 버튼(−5점) 추가', '효과음 on/off 토글', '최고 콤보 기록 추가'],
+  },
+  {
+    v: 'v1.2 · 사전 API',
+    items: ['로컬 사전에 없어도 위키낱말사전(Wiktionary) API로 실제 존재 여부를 확인해 인정', '확인 중에는 타이머를 멈춰 네트워크 지연으로 손해 없게 처리'],
+  },
+  {
+    v: 'v1.3 · 공정성',
+    items: ['컴퓨터도 로컬 사전이 막히면 위키낱말사전에서 실제 단어를 탐색해 이어감', '이제 실제로 이을 단어가 없을 때만 컴퓨터가 패배'],
+  },
+]
+
 const isPlaying = computed(() => status.value === 'playing')
 const startsHint = computed(() => starts.value.join(' / '))
 
@@ -218,6 +238,18 @@ onMounted(() => gameStore.init())
       <a href="https://ko.wiktionary.org" target="_blank" rel="noopener noreferrer">위키낱말사전</a>
       API로 실제 존재 여부를 확인해 인정합니다. 한글 자모 분해로 두음법칙까지 검증합니다.
     </p>
+
+    <details class="patch">
+      <summary>패치노트</summary>
+      <div class="patch-body">
+        <div v-for="p in patchNotes" :key="p.v" class="patch-ver">
+          <b>{{ p.v }}</b>
+          <ul>
+            <li v-for="(it, i) in p.items" :key="i">{{ it }}</li>
+          </ul>
+        </div>
+      </div>
+    </details>
   </div>
 </template>
 
@@ -240,6 +272,53 @@ onMounted(() => gameStore.init())
 }
 .dict-note a:hover {
   color: var(--accent);
+}
+.patch {
+  max-width: 620px;
+  margin: 10px auto 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.patch > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-sub);
+}
+.patch > summary::-webkit-details-marker {
+  display: none;
+}
+.patch > summary::before {
+  content: '▸';
+  margin-right: 8px;
+  color: var(--ink-mute);
+}
+.patch[open] > summary::before {
+  content: '▾';
+}
+.patch-body {
+  padding: 4px 16px 14px;
+  display: grid;
+  gap: 12px;
+}
+.patch-ver b {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.patch-ver ul {
+  margin: 5px 0 0;
+  padding-left: 16px;
+}
+.patch-ver li {
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink-sub);
 }
 .head-tools {
   display: flex;
