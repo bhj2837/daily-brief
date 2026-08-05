@@ -10,6 +10,19 @@ const modules = [
   ['💱 마켓', '환율·암호화폐 실시간 시세와 추세, 주요 증시 지수'],
   ['🔤 끝말잇기', '두음법칙을 반영한 컴퓨터 대전 미니게임'],
 ]
+
+// 활용한 외부 API (● 무키 실시간 · ○ 키 있으면 실데이터, 없으면 샘플)
+const apis = [
+  ['뉴스 · 테크', 'Hacker News API', true],
+  ['뉴스 · 우주/과학', 'Spaceflight News API', true],
+  ['뉴스 · 종합', 'GNews', false],
+  ['날씨', 'Open-Meteo', true],
+  ['날씨 (선택)', 'OpenWeather', false],
+  ['환율', 'Frankfurter', true],
+  ['암호화폐', 'CoinGecko', true],
+  ['증시', 'Finnhub', false],
+  ['끝말잇기 단어 검증', '위키낱말사전(Wiktionary) API', true],
+]
 </script>
 
 <template>
@@ -25,8 +38,20 @@ const modules = [
         </div>
       </div>
 
+      <h3>활용 API</h3>
+      <div class="rows">
+        <div v-for="[k, v, live] in apis" :key="k + v" class="row api">
+          <b>{{ k }}</b>
+          <span>
+            {{ v }}
+            <em class="tag" :class="live ? 'live' : 'opt'">{{ live ? '무키 실시간' : '키 선택' }}</em>
+          </span>
+        </div>
+      </div>
+
       <p class="a-note">
-        모든 데이터는 별도 설정 없이도 동작하며, 키가 없을 때는 샘플 데이터로 자연스럽게 대체됩니다.
+        무키 실시간 API는 키 없이도 항상 실데이터로 동작하고, '키 선택' 항목은 키를 넣으면 실데이터,
+        없으면 샘플로 대체됩니다.
       </p>
 
       <el-button type="primary" round class="home-btn" @click="router.push('/')">
@@ -81,6 +106,25 @@ h3 {
 }
 .row span {
   color: var(--ink-sub);
+}
+.tag {
+  display: inline-block;
+  margin-left: 8px;
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  vertical-align: middle;
+}
+.tag.live {
+  color: var(--up);
+  border-color: color-mix(in srgb, var(--up) 35%, var(--border));
+}
+.tag.opt {
+  color: var(--ink-mute);
 }
 .a-note {
   margin-top: 18px;

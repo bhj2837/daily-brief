@@ -21,7 +21,7 @@ const useHint = () => {
 }
 
 const {
-  chain, status, result, turn, checking, score, combo, difficulty, timeLeft, message,
+  chain, status, result, turn, checking, computerThinking, score, combo, difficulty, timeLeft, message,
   soundOn, hintWord, hintsUsed,
   lastChar, starts, timeRatio, chainLength, start, submit, surrender, hint, toggleSound,
 } = useWordChain()
@@ -152,9 +152,11 @@ onMounted(() => gameStore.init())
                 :placeholder="
                   checking
                     ? '사전에서 단어 확인 중…'
-                    : turn === 'player'
-                      ? `${startsHint}(으)로 시작하는 단어`
-                      : '컴퓨터가 생각 중…'
+                    : computerThinking
+                      ? '컴퓨터가 사전에서 단어 찾는 중…'
+                      : turn === 'player'
+                        ? `${startsHint}(으)로 시작하는 단어`
+                        : '컴퓨터가 생각 중…'
                 "
                 size="large"
                 clearable
@@ -178,7 +180,7 @@ onMounted(() => gameStore.init())
               <button class="ghost" :disabled="turn !== 'player' || checking" @click="useHint">
                 💡 힌트 (-5점{{ hintsUsed ? ` · ${hintsUsed}회` : '' }})
               </button>
-              <button class="surrender" :disabled="checking" @click="surrender">기권하기</button>
+              <button class="surrender" :disabled="checking || computerThinking" @click="surrender">기권하기</button>
             </div>
           </div>
         </template>

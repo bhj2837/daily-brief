@@ -26,3 +26,33 @@ export const verifyKoreanWord = async (word) => {
     return 'unknown'
   }
 }
+
+// 접두어로 시작하는 실제 단어 목록 (Wiktionary allpages).
+// 컴퓨터 AI가 로컬 사전에 없을 때 실제 단어를 이어가기 위해 사용.
+const prefixCache = new Map()
+export const fetchWordsByPrefix = async (prefix, limit = 60) => {
+  const key = String(prefix || '').trim()
+  if (!key) return []
+  if (prefixCache.has(key)) return prefixCache.get(key)
+  try {
+    const { data } = await wik.get('/api.php', {
+      params: {
+        action: 'query',
+        list: 'allpages',
+        apprefix: key,
+        apnamespace: 0,
+        aplimit: limit,
+        format: 'json',
+        origin: '*',
+      },
+    })
+    const pages = data?.query?.allpages || []
+    // 순수 한글 2~5글자만(이상한 항목/구문 제외)
+    const words = pages.map((p) => p.title).filter((t) => /^[가-힣]{2,5}$/.test(t))
+    prefixCache.set(key, words)
+    return words
+  } catch (e) {
+    console.warn('[dict] 접두어 검색 실패:', e.message)
+    return []
+  }
+}

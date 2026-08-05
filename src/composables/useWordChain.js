@@ -4,7 +4,7 @@
 import { ref, shallowRef, computed, onUnmounted } from 'vue'
 import { allowedStarts, lastSyllable, firstSyllable, isHangulSyllable } from '@/utils/hangul'
 import { DICT, DICT_SET, indexByFirst } from '@/data/wordChain'
-import { verifyKoreanWord } from '@/api/dict'
+import { verifyKoreanWord, fetchWordsByPrefix } from '@/api/dict'
 import { sfx } from '@/utils/sound'
 import { useGameStore } from '@/stores/gameStore'
 
@@ -30,6 +30,7 @@ export function useWordChain() {
   const soundOn = ref(true)
   const hintWord = ref('')
   const hintsUsed = ref(0)
+  const computerThinking = ref(false) // 컴퓨터가 온라인 사전을 탐색 중
 
   let timerId = null
 
@@ -76,7 +77,8 @@ export function useWordChain() {
   }
 
   // ---- 컴퓨터 AI ----
-  const computerPick = (ch) => {
+  // 1) 로컬 사전(난이도 반영) 우선
+  const pickLocal = (ch) => {
     const c = candidatesFor(ch)
     if (!c.length) return null
     const openness = (w) => candidatesFor(lastSyllable(w)).length
@@ -89,26 +91,53 @@ export function useWordChain() {
     return c[Math.floor(Math.random() * Math.min(4, c.length))]
   }
 
+  // 2) 로컬에 없으면 Wiktionary에서 실제 단어 탐색(플레이어와 동일한 사전 활용)
+  const pickOnline = async (ch) => {
+    const lists = await Promise.all(allowedStarts(ch).map((s) => fetchWordsByPrefix(s)))
+    const cands = [...new Set(lists.flat())].filter((w) => !used.has(w))
+    if (!cands.length) return null
+    // 명사 성격 우선(용언 '~다' 제외), 없으면 전체에서 선택
+    const preferred = cands.filter((w) => !w.endsWith('다'))
+    const pool = preferred.length ? preferred : cands
+    return pool[Math.floor(Math.random() * pool.length)]
+  }
+
   const pushWord = (word, by) => {
     chain.value = [...chain.value, { word, by }]
     used.add(word)
   }
 
-  const computerTurn = () => {
+  const computerTurn = async () => {
     turn.value = 'computer'
-    const pick = computerPick(lastChar.value)
+    // 로컬 우선 → 없으면 온라인 사전 탐색
+    let pick = pickLocal(lastChar.value)
+    let viaOnline = false
+    if (!pick) {
+      computerThinking.value = true
+      try {
+        pick = await pickOnline(lastChar.value)
+      } catch {
+        pick = null
+      }
+      computerThinking.value = false
+      viaOnline = true
+    }
+    if (status.value !== 'playing') return
     if (!pick) {
       message.value = '컴퓨터가 더 이상 이을 단어가 없습니다!'
       play('win')
       endGame('win')
       return
     }
-    setTimeout(() => {
+    const apply = () => {
       if (status.value !== 'playing') return
       pushWord(pick, 'computer')
       turn.value = 'player'
       startTimer()
-    }, 650)
+    }
+    // 온라인 탐색은 이미 지연이 있으므로 즉시, 로컬은 자연스러운 '생각' 딜레이
+    if (viaOnline) apply()
+    else setTimeout(apply, 650)
   }
 
   // ---- 형식/규칙 검증 (사전 존재 여부는 별도) ----
@@ -234,7 +263,8 @@ export function useWordChain() {
   onUnmounted(stopTimer)
 
   return {
-    chain, status, result, turn, checking, score, combo, maxCombo, difficulty, timeLeft, message,
+    chain, status, result, turn, checking, computerThinking, score, combo, maxCombo,
+    difficulty, timeLeft, message,
     soundOn, hintWord, hintsUsed,
     lastWord, lastChar, starts, timeRatio, chainLength,
     start, submit, surrender, hint, toggleSound,
