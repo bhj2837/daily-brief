@@ -17,11 +17,6 @@ const modules = [
     <BaseCard>
       <span class="kicker">About</span>
       <h1 class="a-title serif">Daily Brief</h1>
-      <p class="a-lead">
-        하루치 정보를 한 화면에 브리핑하는 <b>종합 정보 포털</b>입니다.
-        뉴스를 중심으로 날씨·마켓 정보를 얹고, 쉬어가는 <b>끝말잇기 미니게임</b>까지 담았습니다.
-        읽기 좋은 에디토리얼 레이아웃과 라이트/다크 테마를 지원합니다.
-      </p>
 
       <h3>정보 모듈</h3>
       <div class="rows">

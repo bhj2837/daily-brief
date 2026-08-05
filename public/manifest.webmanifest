@@ -1,7 +1,7 @@
 {
   "name": "Daily Brief",
   "short_name": "Daily Brief",
-  "description": "하루치 정보를 한 화면에 — 뉴스 · 날씨 · 마켓 · 끝말잇기",
+  "description": "뉴스 · 날씨 · 마켓 · 끝말잇기 정보 포털",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

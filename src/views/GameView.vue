@@ -210,6 +210,12 @@ onMounted(() => gameStore.init())
         </BaseCard>
       </aside>
     </div>
+
+    <p class="dict-note">
+      입력한 단어가 로컬 사전(엄선한 명사 약 440개)에 없으면
+      <a href="https://ko.wiktionary.org" target="_blank" rel="noopener noreferrer">위키낱말사전</a>
+      API로 실제 존재 여부를 확인해 인정합니다. 한글 자모 분해로 두음법칙까지 검증합니다.
+    </p>
   </div>
 </template>
 
@@ -217,6 +223,21 @@ onMounted(() => gameStore.init())
 .game {
   display: grid;
   gap: 6px;
+}
+.dict-note {
+  margin-top: 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-mute);
+  text-align: center;
+}
+.dict-note a {
+  color: var(--ink-sub);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.dict-note a:hover {
+  color: var(--accent);
 }
 .head-tools {
   display: flex;

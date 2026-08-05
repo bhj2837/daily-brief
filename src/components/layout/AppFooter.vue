@@ -7,7 +7,6 @@ const year = new Date().getFullYear()
   <footer class="footer">
     <div class="container f-inner">
       <div class="f-brand serif">Daily<b>Brief</b></div>
-      <p class="f-desc">하루치 정보를 한 화면에 — 뉴스 · 날씨 · 마켓 · 끝말잇기.</p>
       <p class="f-src">
         데이터 출처: Hacker News · Spaceflight News · Frankfurter · CoinGecko · Open-Meteo · Wiktionary
         <span class="dot">·</span> 키 없이 실시간 동작
@@ -30,12 +29,6 @@ const year = new Date().getFullYear()
 }
 .f-brand b {
   font-weight: 900;
-}
-.f-desc {
-  color: var(--ink-sub);
-  font-size: 14px;
-  margin: 6px 0;
-  max-width: 640px;
 }
 .f-src {
   color: var(--ink-mute);
