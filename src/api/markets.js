@@ -150,7 +150,10 @@ export const fetchStocks = async () => {
 }
 
 // ---------- 요약(티커/홈용): 병렬 로딩 후 대표 항목 추림 ----------
+// 상단 티커(App)와 홈 요약이 거의 동시에 호출하므로 짧은 캐시로 중복 네트워크를 제거.
+let summaryCache = null
 export const fetchMarketSummary = async () => {
+  if (summaryCache && Date.now() - summaryCache.t < 60 * 1000) return summaryCache.data
   const [rates, crypto, stocks] = await Promise.all([fetchRates(), fetchCrypto(), fetchStocks()])
   const pick = (res, n) => res.data.slice(0, n)
   const items = [...pick(rates, 3), ...pick(crypto, 3), ...pick(stocks, 2)].map((r) => ({
@@ -159,5 +162,7 @@ export const fetchMarketSummary = async () => {
     change: r.change,
   }))
   const allLive = rates.source === 'api' && crypto.source === 'api'
-  return { items, source: allLive ? 'api' : 'mock' }
+  const data = { items, source: allLive ? 'api' : 'mock' }
+  summaryCache = { t: Date.now(), data }
+  return data
 }

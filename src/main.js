@@ -1,7 +1,11 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
+// Element Plus는 전역 등록 대신 온디맨드(unplugin-vue-components)로 컴포넌트만 자동 임포트.
+// 템플릿에 없는 프로그램적 API(ElMessage/ElMessageBox)만 스타일을 개별로 로드한다.
+import 'element-plus/theme-chalk/base.css'
+import 'element-plus/theme-chalk/el-message.css'
+import 'element-plus/theme-chalk/el-message-box.css'
+import 'element-plus/theme-chalk/el-overlay.css'
 import App from './App.vue'
 import router from './router'
 import './assets/main.css'
@@ -18,7 +22,6 @@ useAuthStore(pinia).init()
 useBoardStore(pinia).init()
 
 app.use(router)
-app.use(ElementPlus)
 app.mount('#app')
 
 // PWA: 서비스워커 등록 (프로덕션 빌드에서만 · 설치/오프라인 지원)
