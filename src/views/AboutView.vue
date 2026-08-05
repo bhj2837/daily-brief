@@ -11,7 +11,7 @@ const modules = [
   ['🔤 끝말잇기', '두음법칙을 반영한 컴퓨터 대전 미니게임'],
 ]
 
-// 활용한 외부 API (● 무키 실시간 · ○ 키 있으면 실데이터, 없으면 샘플)
+// 활용한 외부 API (● 키 없이 실시간 · ○ 키 있으면 실데이터, 없으면 샘플)
 const apis = [
   ['뉴스 · 테크', 'Hacker News API', true],
   ['뉴스 · 우주/과학', 'Spaceflight News API', true],
@@ -45,13 +45,13 @@ const apis = [
           <b>{{ k }}</b>
           <span>
             {{ v }}
-            <em class="tag" :class="live ? 'live' : 'opt'">{{ live ? '무키 실시간' : '키 선택' }}</em>
+            <em class="tag" :class="live ? 'live' : 'opt'">{{ live ? '실시간' : '키 선택' }}</em>
           </span>
         </div>
       </div>
 
       <p class="a-note">
-        무키 실시간 API는 키 없이도 항상 실데이터로 동작하고, '키 선택' 항목은 키를 넣으면 실데이터,
+        '실시간' 항목은 키 없이도 항상 실데이터로 동작하고, '키 선택' 항목은 키를 넣으면 실데이터,
         없으면 샘플로 대체됩니다.
       </p>
 
