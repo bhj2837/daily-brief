@@ -143,7 +143,7 @@ export function useWordChain() {
       computerThinking.value = false
       viaOnline = true
     }
-    if (status.value !== 'playing') return
+    if (!isAlive()) return
     if (!pick) {
       message.value = '컴퓨터가 더 이상 이을 단어가 없습니다!'
       play('win')
@@ -151,7 +151,7 @@ export function useWordChain() {
       return
     }
     const apply = () => {
-      if (status.value !== 'playing') return
+      if (!isAlive()) return
       pushWord(pick, 'computer')
       turn.value = 'player'
       startTimer()
@@ -214,7 +214,8 @@ export function useWordChain() {
       checking.value = true
       const real = await verifyKoreanWord(v.word)
       checking.value = false
-      if (status.value !== 'playing') return { ok: false }
+      // 검증 중 화면을 떠났거나 게임이 끝났으면 타이머를 되살리지 않는다
+      if (!isAlive()) return { ok: false }
       if (real === false) {
         message.value = '사전에 없는 단어입니다.'
         combo.value = 0
@@ -265,10 +266,11 @@ export function useWordChain() {
       hintLoading.value = false
     }
 
-    // 조회 중 게임이 끝났으면 아무것도 하지 않는다
-    if (status.value !== 'playing' || turn.value !== 'player') return
-    // 멈춰뒀던 시간을 그대로 이어서 흐르게 한다 (힌트로 시간이 초기화되지 않도록)
-    resumeTimer()
+    // 조회하는 사이에 게임이 끝났거나 화면을 떠났으면 아무것도 하지 않는다
+    if (!isAlive() || turn.value !== 'player') return
+    // 제출 검증이 동시에 진행 중이면 타이머는 submit이 다시 켠다
+    // 아니라면 멈춰뒀던 시간을 그대로 이어서 흐르게 한다 (힌트로 시간이 초기화되지 않도록)
+    if (!checking.value) resumeTimer()
 
     // 로컬 + 온라인을 합쳐 중복 제거 (온라인 단어도 submit에서 사전 검증을 통과한다)
     const pool = [...new Set([...local, ...online])]
@@ -308,7 +310,11 @@ export function useWordChain() {
     }
   }
 
-  onUnmounted(stopTimer)
+  // 화면을 떠나면 타이머를 멈추고, 이후 도착하는 비동기 결과도 무시하도록 표시
+  onUnmounted(() => {
+    disposed = true
+    stopTimer()
+  })
 
   return {
     chain,

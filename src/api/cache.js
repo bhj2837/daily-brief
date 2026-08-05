@@ -36,11 +36,3 @@ export function cachedRequest(key, ttl, loader) {
   store.set(key, { at: Date.now(), promise })
   return promise
 }
-
-// 수동 무효화 (예: 사용자가 새로고침 버튼을 누를 때)
-export function invalidate(prefix = '') {
-  if (!prefix) return store.clear()
-  for (const key of store.keys()) {
-    if (key.startsWith(prefix)) store.delete(key)
-  }
-}
