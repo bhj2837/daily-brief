@@ -4,6 +4,7 @@
 // 강의 8장 Element Plus(el-tabs, el-empty, el-result) + 로딩/에러/빈 상태 처리.
 // 조판: 신문 섹션면처럼 굵은 섹션 룰 아래 기사가 괘선으로 구분되어 쌓인다.
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useNews } from '@/composables/useNews'
 import SectionHeader from '@/components/common/SectionHeader.vue'
 import SourceBadge from '@/components/common/SourceBadge.vue'
@@ -16,11 +17,16 @@ const TABS = [
   { name: 'general', label: '종합', desc: '종합뉴스' },
 ]
 
+const router = useRouter()
 const active = ref('tech')
 const { articles, isLoading, error, source, load } = useNews()
 
 const activeTab = computed(() => TABS.find((t) => t.name === active.value))
 const reload = () => load(active.value)
+
+// 자식(NewsCard)이 올린 이벤트를 부모가 받아 처리한다 (강의 4장 emit 수신)
+const openArticle = (id) => router.push(`/news/${id}`)
+
 watch(active, reload)
 onMounted(reload)
 </script>
@@ -76,6 +82,7 @@ onMounted(reload)
         v-reveal="{ index: i }"
         :article="a"
         :rank="active === 'tech' ? i + 1 : 0"
+        @select="openArticle"
       />
     </div>
   </div>

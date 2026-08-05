@@ -45,10 +45,17 @@ const load = async () => {
   await loadAll()
   loading.value = false
 }
+
+// 동적 라우트 재사용 대응: /markets/a → /markets/b 로 이동하면 컴포넌트가 재생성되지 않는다.
+// 이미 받아둔 데이터에 해당 종목이 있으면 computed가 알아서 갱신되고,
+// 없을 때만(직접 링크 진입 등) 다시 조회한다.
 watch(
   () => props.id,
-  () => {},
+  () => {
+    if (!found.value) load()
+  },
 )
+
 onMounted(load)
 </script>
 

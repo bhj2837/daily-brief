@@ -4,12 +4,14 @@
 // 강의 7장 Axios · 9장 Promise.all · 8장 Element Plus(skeleton/empty).
 // 조판: 신문 증권면처럼 시세표를 세로 괘선으로 구분된 3단으로 배치한다.
 import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMarkets } from '@/composables/useMarkets'
 import SectionHeader from '@/components/common/SectionHeader.vue'
 import BaseCard from '@/components/common/BaseCard.vue'
 import SourceBadge from '@/components/common/SourceBadge.vue'
 import MarketTable from '@/components/markets/MarketTable.vue'
 
+const router = useRouter()
 const { sections, loadAll } = useMarkets()
 
 const meta = [
@@ -31,6 +33,9 @@ const tally = computed(() => {
 const quotedAt = computed(() =>
   new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
 )
+
+// MarketRow → MarketTable → 이곳으로 올라온 select 이벤트를 라우팅으로 처리
+const openDetail = (id) => router.push(`/markets/${id}`)
 
 onMounted(loadAll)
 </script>
@@ -76,6 +81,7 @@ onMounted(loadAll)
           :rows="sections[m.key].data"
           :loading="sections[m.key].loading"
           :error="sections[m.key].error"
+          @select="openDetail"
         />
 
         <template #footer>

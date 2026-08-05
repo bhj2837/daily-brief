@@ -1,15 +1,18 @@
 <script setup>
 // 1면 부기사용 컴팩트 헤드라인 (순번 + 제목 + 메타).
+// NewsCard와 동일한 원칙: 이동은 부모가 하고, 여기서는 select 이벤트만 올려보낸다.
 // 신문 헤드라인처럼 밀도를 높이고, 호버 시 잉크 밑줄이 좌→우로 그어진다.
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { timeAgo } from '@/utils/format'
 
 const props = defineProps({
   article: { type: Object, required: true },
   rank: { type: Number, default: 0 },
 })
-const router = useRouter()
+
+// 부모(BriefHomeView)로 클릭한 기사 id를 전달 (강의 4장 defineEmits)
+const emit = defineEmits(['select'])
+
 const meta = computed(() => {
   const a = props.article
   const parts = [a.sourceLabel, timeAgo(a.at)]
@@ -19,7 +22,7 @@ const meta = computed(() => {
 </script>
 
 <template>
-  <button class="hl" @click="router.push(`/news/${article.id}`)">
+  <button class="hl" @click="emit('select', article.id)">
     <span v-if="rank" class="rank mono">{{ String(rank).padStart(2, '0') }}</span>
     <span class="text">
       <span class="t serif"

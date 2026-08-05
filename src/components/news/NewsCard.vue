@@ -1,9 +1,10 @@
 <script setup>
-// 뉴스 기사 카드 (강의 4장 props/emit). 클릭 시 내부 상세로 이동,
-// 북마크 토글은 bookmarkStore(type 'news')로 처리.
+// 뉴스 기사 카드 (강의 4장 props / emit).
+// 이 컴포넌트는 "표시"만 책임진다. 화면 이동은 직접 하지 않고 select 이벤트만 올려보내고,
+// 실제 라우팅은 부모 뷰(NewsView)가 처리한다 → 재사용성이 올라간다.
+// 북마크 토글도 bookmark 이벤트로 알려 부모가 후처리(토스트 등)를 붙일 수 있게 한다.
 // 조판: 좌측 본문 + 우측 하프톤 사진. 호버 시 망점이 걷히고 제목에 잉크 밑줄이 그어진다.
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { useBookmarkStore } from '@/stores/bookmarkStore'
 import { timeAgo } from '@/utils/format'
 import SourceBadge from '@/components/common/SourceBadge.vue'
@@ -12,7 +13,10 @@ const props = defineProps({
   article: { type: Object, required: true },
   rank: { type: Number, default: 0 },
 })
-const router = useRouter()
+
+// 부모에게 올려보낼 이벤트 정의 (강의 4장 defineEmits)
+const emit = defineEmits(['select', 'bookmark'])
+
 const bookmarkStore = useBookmarkStore()
 
 const marked = computed(() => bookmarkStore.has('news', props.article.id))
@@ -24,9 +28,14 @@ const meta = computed(() => {
   return parts.filter(Boolean).join(' · ')
 })
 
-const open = () => router.push(`/news/${props.article.id}`)
-const toggleMark = () =>
+// 카드 클릭 → 기사 id를 부모로 전달
+const open = () => emit('select', props.article.id)
+
+// 북마크 토글 → 스토어를 갱신하고, 결과 상태를 부모에게도 알린다
+const toggleMark = () => {
   bookmarkStore.toggle({ type: 'news', id: props.article.id, label: props.article.title })
+  emit('bookmark', { id: props.article.id, marked: marked.value })
+}
 </script>
 
 <template>

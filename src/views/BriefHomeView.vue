@@ -90,6 +90,9 @@ onMounted(async () => {
 const goWeather = () => router.push('/weather')
 const goDetail = (id) => router.push(`/weather/${id}`)
 const openLead = () => lead.value && router.push(`/news/${lead.value.id}`)
+
+// 자식(HeadlineItem)이 올린 select 이벤트를 받아 라우팅한다 (강의 4장 emit 수신)
+const openArticle = (id) => router.push(`/news/${id}`)
 </script>
 
 <template>
@@ -161,6 +164,7 @@ const openLead = () => lead.value && router.push(`/news/${lead.value.id}`)
                 v-reveal="{ index: i }"
                 :article="a"
                 :rank="i + 2"
+                @select="openArticle"
               />
             </div>
           </div>

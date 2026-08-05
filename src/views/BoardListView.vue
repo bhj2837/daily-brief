@@ -1,21 +1,29 @@
 <script setup>
 // 게시판 목록 — boardStore(localStorage) 기반 (강의 6장 Pinia · 2장 v-for/v-if)
+// 행 렌더링은 PostRow 컴포넌트에 위임하고, 이 뷰는 데이터 조회와 라우팅만 책임진다.
 // 조판: 신문 '독자 투고(Letters)'면. 표 형식으로 제목·작성자·일자·조회를 정렬한다.
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useBoardStore } from '@/stores/boardStore'
 import { useAuthStore } from '@/stores/authStore'
-import { fmtDate } from '@/utils/format'
 import SectionHeader from '@/components/common/SectionHeader.vue'
+import PostRow from '@/components/board/PostRow.vue'
 
 const router = useRouter()
 const board = useBoardStore()
 const auth = useAuthStore()
-const { posts } = storeToRefs(board)
-const list = computed(() => board.sorted)
+
+// 스토어의 정렬된 목록을 단일 소스로 사용한다 (강의 6장 storeToRefs로 반응성 유지)
+const { sorted } = storeToRefs(board)
+const { username } = storeToRefs(auth)
+
+const total = computed(() => sorted.value.length)
 
 const goWrite = () => router.push('/board/write')
+
+// 자식(PostRow)이 올린 open 이벤트를 받아 상세로 이동 (강의 4장 emit 수신)
+const openPost = (id) => router.push(`/board/${id}`)
 </script>
 
 <template>
@@ -24,14 +32,14 @@ const goWrite = () => router.push('/board/write')
       kicker="Letters"
       title="게시판"
       size="lg"
-      :sub="posts.length ? `총 ${posts.length}건의 글` : '아직 등록된 글이 없습니다'"
+      :sub="total ? `총 ${total}건의 글` : '아직 등록된 글이 없습니다'"
     >
       <template #action>
         <el-button type="primary" round size="small" @click="goWrite">글쓰기</el-button>
       </template>
     </SectionHeader>
 
-    <el-empty v-if="!posts.length" description="첫 글을 남겨보세요.">
+    <el-empty v-if="!total" description="첫 글을 남겨보세요.">
       <el-button type="primary" round @click="goWrite">글쓰기</el-button>
     </el-empty>
 
@@ -46,18 +54,14 @@ const goWrite = () => router.push('/board/write')
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(p, i) in list" :key="p.id" @click="router.push(`/board/${p.id}`)">
-          <td class="c-no mono">{{ String(list.length - i).padStart(2, '0') }}</td>
-          <td class="c-title">
-            <span class="title serif"
-              ><span class="ink-underline">{{ p.title }}</span></span
-            >
-            <span v-if="auth.username === p.authorId" class="mine">내 글</span>
-          </td>
-          <td class="c-author">{{ p.author }}</td>
-          <td class="c-date mono">{{ fmtDate(p.createdAt) }}</td>
-          <td class="c-views mono">{{ p.views }}</td>
-        </tr>
+        <PostRow
+          v-for="(p, i) in sorted"
+          :key="p.id"
+          :post="p"
+          :no="total - i"
+          :mine="username === p.authorId"
+          @open="openPost"
+        />
       </tbody>
     </table>
   </div>
@@ -78,64 +82,21 @@ const goWrite = () => router.push('/board/write')
   padding: 8px;
   border-bottom: var(--rule-med) solid var(--ink);
 }
-.list td {
-  padding: 12px 8px;
-  border-bottom: var(--rule-hair) solid var(--border);
-  vertical-align: middle;
-}
-.list tbody tr {
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease);
-}
-.list tbody tr:hover {
-  background: var(--surface);
-}
-.c-no {
-  width: 1%;
-  color: var(--ink-faint);
-  font-size: var(--fs-tiny);
-  font-weight: 700;
-  white-space: nowrap;
-}
+.c-no,
 .c-author,
 .c-date,
 .c-views {
-  white-space: nowrap;
-  color: var(--ink-sub);
   width: 1%;
+  white-space: nowrap;
 }
 .c-date,
 .c-views {
   text-align: right;
 }
-.title {
-  font-weight: 700;
-  font-size: 15.5px;
-}
-.title .ink-underline {
-  background-size: 0% var(--rule-thin);
-}
-.list tbody tr:hover .title .ink-underline {
-  background-size: 100% var(--rule-thin);
-}
-.mine {
-  margin-left: 8px;
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: var(--accent);
-  border: var(--rule-thin) solid color-mix(in srgb, var(--accent) 45%, var(--border));
-  border-radius: var(--radius-pill);
-  padding: 1px 7px;
-  vertical-align: middle;
-  white-space: nowrap;
-}
 
 @media (max-width: 640px) {
   .list th.c-author,
-  .list td.c-author,
-  .list th.c-no,
-  .list td.c-no {
+  .list th.c-no {
     display: none;
   }
 }
