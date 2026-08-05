@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 
 // ===== 라우트 정의 =====
 // 강의 5장 Vue Router 개념 총망라:
@@ -65,6 +66,46 @@ const routes = [
     component: () => import('@/views/GameView.vue'),
     meta: { title: '끝말잇기' },
   },
+  // ---- 게시판 ----
+  {
+    path: '/board',
+    name: 'board',
+    component: () => import('@/views/BoardListView.vue'),
+    meta: { title: '게시판' },
+  },
+  {
+    path: '/board/write',
+    name: 'board-write',
+    component: () => import('@/views/BoardFormView.vue'),
+    meta: { title: '글쓰기', requiresAuth: true },
+  },
+  {
+    path: '/board/:id',
+    name: 'board-detail',
+    component: () => import('@/views/BoardDetailView.vue'),
+    props: true,
+    meta: { title: '게시글' },
+  },
+  {
+    path: '/board/:id/edit',
+    name: 'board-edit',
+    component: () => import('@/views/BoardFormView.vue'),
+    props: true,
+    meta: { title: '글 수정', requiresAuth: true },
+  },
+  // ---- 인증 ----
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/LoginView.vue'),
+    meta: { title: '로그인' },
+  },
+  {
+    path: '/signup',
+    name: 'signup',
+    component: () => import('@/views/SignupView.vue'),
+    meta: { title: '회원가입' },
+  },
   // ---- 북마크 ----
   {
     path: '/bookmarks',
@@ -96,7 +137,17 @@ const router = createRouter({
   },
 })
 
-// 전역 가드: 탭 제목 갱신 (강의 Navigation Guard)
+// 인증 가드: 로그인이 필요한 경로 보호 (강의 Navigation Guard - beforeEach)
+router.beforeEach((to) => {
+  if (to.meta.requiresAuth) {
+    const auth = useAuthStore()
+    if (!auth.isLoggedIn) {
+      return { path: '/login', query: { redirect: to.fullPath } }
+    }
+  }
+})
+
+// 전역 가드: 탭 제목 갱신 (강의 Navigation Guard - afterEach)
 router.afterEach((to) => {
   document.title = to.meta.title ? `${to.meta.title} · Daily Brief` : 'Daily Brief'
 })

@@ -1,13 +1,23 @@
 <script setup>
 // 상단 마스트헤드(신문 제호) + 네비게이션 (강의 5장 RouterLink + 8장 토글러 배치).
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import UnitToggler from '@/components/weather/UnitToggler.vue'
 import ThemeToggler from '@/components/common/ThemeToggler.vue'
 import { useBookmarkStore } from '@/stores/bookmarkStore'
+import { useAuthStore } from '@/stores/authStore'
 
+const router = useRouter()
 const bookmarkStore = useBookmarkStore()
 const { count } = storeToRefs(bookmarkStore)
+
+const auth = useAuthStore()
+const { username, nickname } = storeToRefs(auth)
+
+const logout = () => {
+  auth.logout()
+  router.push('/')
+}
 
 const nav = [
   { to: '/', label: '홈' },
@@ -15,6 +25,7 @@ const nav = [
   { to: '/markets', label: '마켓' },
   { to: '/weather', label: '날씨' },
   { to: '/game', label: '끝말잇기' },
+  { to: '/board', label: '게시판' },
   { to: '/bookmarks', label: '북마크' },
   { to: '/about', label: '소개' },
 ]
@@ -31,6 +42,12 @@ const nav = [
       <div class="actions">
         <UnitToggler />
         <ThemeToggler />
+        <span class="sep" />
+        <template v-if="username">
+          <span class="user">{{ nickname }}</span>
+          <button class="auth-btn" @click="logout">로그아웃</button>
+        </template>
+        <RouterLink v-else to="/login" class="auth-btn login">로그인</RouterLink>
       </div>
     </div>
 
@@ -59,6 +76,36 @@ const nav = [
   justify-content: space-between;
   padding-top: 12px;
   padding-bottom: 10px;
+}
+.sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 2px;
+}
+.user {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.auth-btn {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--ink-sub);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.auth-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+.auth-btn.login {
+  background: var(--ink);
+  color: var(--surface);
+  border-color: var(--ink);
 }
 .brand {
   display: flex;

@@ -50,3 +50,11 @@ export const timeAgo = (ms) => {
   const dt = new Date(ms)
   return `${dt.getMonth() + 1}/${dt.getDate()}`
 }
+
+// UNIX(ms) → "2026.08.05" 날짜 (게시판 등)
+export const fmtDate = (ms) => {
+  if (!ms) return ''
+  const d = new Date(ms)
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}`
+}

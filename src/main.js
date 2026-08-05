@@ -5,10 +5,18 @@ import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router'
 import './assets/main.css'
+import { useAuthStore } from './stores/authStore'
+import { useBoardStore } from './stores/boardStore'
 
 // Vue 앱 부트스트랩: Pinia + Router + Element Plus 전역 주입 (강의 6·5·8장)
 const app = createApp(App)
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
+
+// 라우터 가드(beforeEach)가 로그인 상태를 참조하므로, 라우터 사용 전에 세션 복원
+useAuthStore(pinia).init()
+useBoardStore(pinia).init()
+
 app.use(router)
 app.use(ElementPlus)
 app.mount('#app')

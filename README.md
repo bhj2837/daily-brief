@@ -51,6 +51,11 @@ cp .env.example .env
 | `/weather` | 날씨 (기존 재활용) | Lazy Loading |
 | `/weather/:cityId` | 날씨 상세 (시간별 차트) | 동적 라우트 |
 | `/game` | 끝말잇기 미니게임 | Lazy Loading |
+| `/board` | 게시판 목록 | Lazy Loading |
+| `/board/write` | 글쓰기 | 동적 · **beforeEach 인증 가드** |
+| `/board/:id` | 게시글 상세 | 동적 라우트 |
+| `/board/:id/edit` | 글 수정 | 동적 · **인증 가드** |
+| `/login`, `/signup` | 로그인 · 회원가입 | Lazy Loading |
 | `/bookmarks` | 북마크 모아보기 | Lazy Loading |
 | `/about` | 소개 | 정적 라우트 |
 | `/:pathMatch(.*)*` | 404 | Catch-all |
@@ -71,7 +76,7 @@ src/
 │   └── weather/             # cities · weatherApi · openMeteo(무키 실시간) · mockData
 ├── data/                    # wordChain(사전) · mockNews · mockMarkets
 ├── composables/             # useWeather · useNews · useMarkets · useWordChain · useUnit · useWeatherTheme · useGeolocation
-├── stores/                  # configStore · bookmarkStore · historyStore · gameStore
+├── stores/                  # configStore · bookmarkStore · historyStore · gameStore · authStore · boardStore
 ├── components/
 │   ├── layout/              # AppNavBar · TickerBar · AppFooter
 │   ├── common/              # BaseCard · SectionHeader · SkeletonBlock · ThemeToggler · SourceBadge · LineChart
@@ -115,6 +120,7 @@ PWA: `public/manifest.webmanifest` · `public/sw.js` · `public/icons/*` (설치
 - [x] **끝말잇기 미니게임** — 한글 자모 분해 · 두음법칙(려→여/락→낙) · 로컬 사전 442단어 + 온라인 사전(Wiktionary) 검증 · 난이도별 컴퓨터 AI · 타이머/점수/콤보 · 힌트 · 효과음 · Pinia 전적 영속
 - [x] **날씨 무키 실시간** — Open-Meteo 연동으로 키 없이도 실데이터(OpenWeather 키 있으면 우선), 실패 시 Mock 폴백
 - [x] **추가 기능** — 북마크 모아보기(/bookmarks) · 날씨 시간별 기온 차트 · 마켓 종목 상세 차트(/markets/:id) · **PWA(설치·오프라인)**
+- [x] **회원가입·게시판** — authStore/boardStore(localStorage) · 게시글 CRUD(작성자만 수정/삭제·조회수) · **라우터 beforeEach 인증 가드** · **el-form 유효성 검증**
 
 **전체 완성.** `npm run build` 통과 · `npx eslint src` 0 error.
 

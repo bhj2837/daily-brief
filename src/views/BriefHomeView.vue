@@ -80,7 +80,6 @@ const goDetail = (id) => router.push(`/weather/${id}`)
         <span class="rule-tick" />
       </div>
       <h1 class="edition-title serif">오늘의 브리핑</h1>
-      <p class="edition-sub">뉴스 · 날씨 · 마켓을 한 화면에서. 필요한 정보만 골라 읽으세요.</p>
     </header>
 
     <div class="layout">
