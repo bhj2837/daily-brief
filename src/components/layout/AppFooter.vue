@@ -8,7 +8,7 @@ const year = new Date().getFullYear()
     <div class="container f-inner">
       <div class="f-brand serif">Daily<b>Brief</b></div>
       <p class="f-src">
-        데이터 출처: Hacker News · Spaceflight News · Frankfurter · CoinGecko · Open-Meteo · Wiktionary
+        데이터 출처: Hacker News · Spaceflight News · Frankfurter · CoinGecko · Open-Meteo · wttr.in · Wiktionary
         <span class="dot">·</span> 키 없이 실시간 동작
       </p>
       <p class="f-copy">© {{ year }} Daily Brief · Vue 3 + Vite</p>

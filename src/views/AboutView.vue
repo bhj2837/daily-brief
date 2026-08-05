@@ -17,6 +17,7 @@ const apis = [
   ['뉴스 · 우주/과학', 'Spaceflight News API', true],
   ['뉴스 · 종합', 'GNews', false],
   ['날씨', 'Open-Meteo', true],
+  ['날씨 (대체)', 'wttr.in', true],
   ['날씨 (선택)', 'OpenWeather', false],
   ['환율', 'Frankfurter', true],
   ['암호화폐', 'CoinGecko', true],
