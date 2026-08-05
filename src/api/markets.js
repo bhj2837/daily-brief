@@ -5,7 +5,11 @@
 // 통합 마켓 스키마:
 //   { id, label, name, value(number), display(string), change(number), spark:number[], isLive }
 import { createHttp } from './http'
+import { cachedRequest } from './cache'
 import { MOCK_STOCKS, MOCK_RATES, MOCK_CRYPTO } from '@/data/mockMarkets'
+
+// 시세 캐시 유효 시간 — 무키 공개 API의 호출 한도(429)를 넘기지 않도록 1분간 재사용
+const QUOTE_TTL = 60 * 1000
 
 const fx = createHttp({ baseURL: 'https://api.frankfurter.dev/v1' })
 const cg = createHttp({ baseURL: 'https://api.coingecko.com/api/v3' })
@@ -49,7 +53,7 @@ const FX_SYMBOLS = [
 
 const ymd = (d) => d.toISOString().slice(0, 10)
 
-export const fetchRates = async () => {
+const loadRates = async () => {
   try {
     const end = new Date()
     const start = new Date(end.getTime() - 12 * 86400000) // 최근 ~12일(주말 제외 대비)
@@ -84,7 +88,7 @@ export const fetchRates = async () => {
 const COINS = ['bitcoin', 'ethereum', 'solana', 'ripple', 'dogecoin']
 const SYMBOL_KO = { btc: 'BTC', eth: 'ETH', sol: 'SOL', xrp: 'XRP', doge: 'DOGE' }
 
-export const fetchCrypto = async () => {
+const loadCrypto = async () => {
   try {
     const { data } = await cg.get('/coins/markets', {
       params: {
@@ -123,7 +127,7 @@ export const fetchCrypto = async () => {
 }
 
 // ---------- 증시 (기본 Mock) ----------
-export const fetchStocks = async () => {
+const loadStocks = async () => {
   // 키가 있으면 Finnhub 실데이터, 없거나 실패하면 Mock 폴백
   if (FINNHUB_KEY) {
     try {
@@ -160,20 +164,25 @@ export const fetchStocks = async () => {
   return { data: MOCK_STOCKS.map((r) => withDisplay({ ...r, isLive: false })), source: 'mock' }
 }
 
+// ---------- 공개 API 진입점 (요청 캐시 적용) ----------
+// 마켓 목록 ↔ 종목 상세를 오갈 때마다 같은 API를 다시 부르지 않도록 1분간 결과를 재사용한다.
+// 응답이 오기 전에 들어온 동일 요청은 같은 Promise를 공유해 네트워크가 한 번만 나간다.
+export const fetchRates = () => cachedRequest('markets:rates', QUOTE_TTL, loadRates)
+export const fetchCrypto = () => cachedRequest('markets:crypto', QUOTE_TTL, loadCrypto)
+export const fetchStocks = () => cachedRequest('markets:stocks', QUOTE_TTL, loadStocks)
+
 // ---------- 요약(티커/홈용): 병렬 로딩 후 대표 항목 추림 ----------
-// 상단 티커(App)와 홈 요약이 거의 동시에 호출하므로 짧은 캐시로 중복 네트워크를 제거.
-let summaryCache = null
-export const fetchMarketSummary = async () => {
-  if (summaryCache && Date.now() - summaryCache.t < 60 * 1000) return summaryCache.data
-  const [rates, crypto, stocks] = await Promise.all([fetchRates(), fetchCrypto(), fetchStocks()])
-  const pick = (res, n) => res.data.slice(0, n)
-  const items = [...pick(rates, 3), ...pick(crypto, 3), ...pick(stocks, 2)].map((r) => ({
-    label: r.label,
-    value: r.display,
-    change: r.change,
-  }))
-  const allLive = rates.source === 'api' && crypto.source === 'api'
-  const data = { items, source: allLive ? 'api' : 'mock' }
-  summaryCache = { t: Date.now(), data }
-  return data
-}
+// 상단 티커(App)와 홈 요약이 거의 동시에 호출하지만, 아래 3개 fetch가 이미 캐시를 공유한다.
+export const fetchMarketSummary = () =>
+  cachedRequest('markets:summary', QUOTE_TTL, async () => {
+    // 강의 9장 Promise.all: 세 섹션 병렬 로딩
+    const [rates, crypto, stocks] = await Promise.all([fetchRates(), fetchCrypto(), fetchStocks()])
+    const pick = (res, n) => res.data.slice(0, n)
+    const items = [...pick(rates, 3), ...pick(crypto, 3), ...pick(stocks, 2)].map((r) => ({
+      label: r.label,
+      value: r.display,
+      change: r.change,
+    }))
+    const allLive = rates.source === 'api' && crypto.source === 'api'
+    return { items, source: allLive ? 'api' : 'mock' }
+  })

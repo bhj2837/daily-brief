@@ -6,6 +6,7 @@
 //   4) Mock        (모두 실패 시 최종 폴백)
 // 덕분에 키가 없거나 특정 무키 API가 한도에 걸려도 날씨가 실시간으로 유지된다.
 import { createHttp } from '@/api/http'
+import { cachedRequest } from '@/api/cache'
 import { buildMockCurrent, buildMockForecast, nearestMockCity } from './mockData'
 import { findCityById } from './cities'
 import { fetchWeatherOM } from './openMeteo'
@@ -21,18 +22,23 @@ const http = createHttp({
 
 export const hasApiKey = () => Boolean(API_KEY)
 
-// 무키 소스들을 순서대로 시도 → { current, forecast } 반환(모두 실패 시 null)
+// 무키 소스는 한 번의 호출로 { current, forecast }를 함께 돌려준다.
+// 좌표 기준으로 3분간 캐시해 (1) 현재날씨+예보가 같은 응답을 공유하고,
+// (2) 전국 그리드를 반복해서 열어도 무키 API 호출 한도(429)에 걸리지 않게 한다.
+const KEYLESS_TTL = 3 * 60 * 1000
 const KEYLESS_PROVIDERS = [fetchWeatherOM, fetchWeatherWttr]
-const fetchKeyless = async (lat, lon, name) => {
-  for (const provider of KEYLESS_PROVIDERS) {
-    try {
-      return await provider(lat, lon, name)
-    } catch (e) {
-      console.warn(`[weatherApi] 무키 소스 실패(${provider.name}) → 다음 시도:`, e.message)
+
+const fetchKeyless = (lat, lon, name) =>
+  cachedRequest(`weather:${lat},${lon}`, KEYLESS_TTL, async () => {
+    for (const provider of KEYLESS_PROVIDERS) {
+      try {
+        return await provider(lat, lon, name)
+      } catch (e) {
+        console.warn(`[weatherApi] 무키 소스 실패(${provider.name}) → 다음 시도:`, e.message)
+      }
     }
-  }
-  return null
-}
+    return null
+  })
 
 // ---------- 도시 ID 기반 현재 날씨 ----------
 export const fetchCurrentByCity = async (cityId) => {
